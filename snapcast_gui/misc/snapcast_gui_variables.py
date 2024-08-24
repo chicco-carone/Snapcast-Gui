@@ -28,7 +28,7 @@ class SnapcastGuiVariables(QObject):
         "https://api.github.com/repos/badaix/snapcast/releases/latest")
     snapcast_gui_github_url = QUrl(
         "https://api.github.com/repos/chicco-carone/Snapcast-Gui/releases/latest")
-    snapcast_gui_version = "0.1.0 beta"
+    snapcast_gui_version = "0.1.0"
 
     config_dir: str = str(Path(QStandardPaths.writableLocation(
         QStandardPaths.AppConfigLocation)) / "snapcast-gui")
