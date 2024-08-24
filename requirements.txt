@@ -1,0 +1,4 @@
+PySide6
+snapcast
+platformdirs 
+notify-py
