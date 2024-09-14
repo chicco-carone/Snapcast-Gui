@@ -30,7 +30,8 @@ class ServerWindow(QMainWindow):
 
     def __init__(self, snapcast_settings: "SnapcastSettings", log_level: int):
         super(ServerWindow, self).__init__()
-        logging.getLogger().setLevel(log_level)
+        self.logger = logging.getLogger("ServerWindow")
+        self.logger.setLevel(log_level)
 
         self.snapcast_settings = snapcast_settings
 
@@ -132,7 +133,8 @@ class ServerWindow(QMainWindow):
             and self.snapserver_process.state() == QProcess.Running
         ):
             QMessageBox.critical(self, "Error", "Snapserver process already running.")
-            logging.warning("serverwindow: Snapserver process already running.")
+            self.logger.warning(
+                "Snapserver process already running.")
             return
 
         def start_snapserver():
@@ -146,16 +148,16 @@ class ServerWindow(QMainWindow):
             self.run_command(self.before_command.toPlainText())
             self.before_command.setReadOnly(True)
             self.after_command.setReadOnly(True)
-            logging.debug("serverwindow: Snapserver executable {}".format(
+            self.logger.debug("Snapserver executable {}".format(
                 self.snapcast_settings.read_setting("Snapserver/Custom_Path")
             ))
-            logging.debug(
-                "serverwindow: Snapserver command: {}".format(
+            self.logger.debug(
+                "Snapserver command: {}".format(
                     self.snapserver_process.program()
                 )
             )
             self.snapserver_process.started.connect(
-                lambda: logging.info("serverwindow: Snapserver process started.")
+                lambda: self.logger.info("Snapserver process started.")
             )
             self.snapserver_process.start()
 
@@ -188,7 +190,8 @@ class ServerWindow(QMainWindow):
             self.connect_button.setText("Run Snapserver")
         else:
             QMessageBox.warning(self, "Warning", "Snapserver process is not running.")
-            logging.warning("serverwindow: Snapserver process is not running.")
+            self.logger.warning(
+                "Snapserver process is not running.")
             self.process_finished("")
 
     def cleanup_snapserver_thread(self) -> None:
@@ -220,7 +223,7 @@ class ServerWindow(QMainWindow):
         self.connect_button.clicked.disconnect()
         self.connect_button.clicked.connect(self.run_snapserver)
         Notifications.send_notify(log, "Snapserver")
-        logging.info(f"serverwindow: {log}")
+        self.logger.info(f"serverwindow: {log}")
 
     def read_output(self):
         """
@@ -229,7 +232,7 @@ class ServerWindow(QMainWindow):
         This method reads the standard output of the snapserver process and decodes it into a string.
         The decoded output is then appended to the log area.
         """
-        logging.debug("serverwindow: Reading snapserver output.")
+        self.logger.debug("Reading snapserver output.")
         output = self.snapserver_process.readAllStandardOutput().data().decode()
         self.log_area.append(output)
 
@@ -273,4 +276,4 @@ class ServerWindow(QMainWindow):
         """
         if command != "":
             process = subprocess.run(command)
-            logging.debug(f"serverwindow: Ran command: {command} with output: {process.stdout.decode()}")
+            self.logger.debug(f"Ran command: {command} with output: {process.stdout.decode()}")

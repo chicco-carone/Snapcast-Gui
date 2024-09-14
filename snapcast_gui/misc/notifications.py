@@ -9,7 +9,8 @@ class Notifications:
     """
     Class for sending notifications.
     """
-    logging.getLogger().setLevel(logging.INFO)
+    logger = logging.getLogger("Notifications")
+    logger.setLevel(logging.INFO)
 
     @staticmethod
     def send_notify(title: str, message: str) -> None:
@@ -22,9 +23,9 @@ class Notifications:
             notification.title = title
             notification.message = message
         except Exception as e:
-            logging.error("Platform not supported: {} {}".format(sys.platform, e))
+            Notifications.logger.error("Platform not supported: {} {}".format(sys.platform, e))
 
-        logging.info("Sending notification: {}".format(message))
+        Notifications.logger.info("Sending notification: {}".format(message))
 
         if sys.platform.startswith("linux") or sys.platform.startswith("win"):
             notification.icon = SnapcastGuiVariables.snapcast_icon_path

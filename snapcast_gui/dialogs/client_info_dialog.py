@@ -23,6 +23,7 @@ from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
 if TYPE_CHECKING:
     from snapcast_gui.windows.main_window import MainWindow
 
+
 class ClientInfoDialog(QDialog):
     latest_version_fetched = Signal(str)
 
@@ -37,16 +38,19 @@ class ClientInfoDialog(QDialog):
         log_level: int = logging.DEBUG,
     ) -> None:
         super().__init__()
-        logging.getLogger().setLevel(log_level)
+        self.logger = logging.getLogger("ClientInfoDialog")
+        self.logger.setLevel(log_level)
 
-        logging.debug("Client Info Dialog: Created for client {}.".format(client_info.get("identifier", "Unknown")))
+        self.logger.debug("Created for client {}.".format(
+            client_info.get("identifier", "Unknown")))
 
         self.mainwindow = mainwindow
         self.network_manager = QNetworkAccessManager(self)
         self.network_manager.finished.connect(self.on_version_fetched)
 
         self.setWindowTitle(
-            "Client Info for {}".format(client_info.get("friendly_name", "Unknown"))
+            "Client Info for {}".format(
+                client_info.get("friendly_name", "Unknown"))
         )
 
         self.layout = QVBoxLayout()
@@ -86,12 +90,12 @@ class ClientInfoDialog(QDialog):
         version_text: str = client_info.get("version", "Unknown")
         version.setText(version_text)
         version_layout.addWidget(version)
-        
+
         self.check_version_button = QPushButton("Check Version")
         self.check_version_button.setToolTip("Check the version of the client")
         self.check_version_button.clicked.connect(self.check_version)
         version_layout.addWidget(self.check_version_button)
-        
+
         self.layout.addLayout(version_layout)
 
         volume_label = QLabel("Volume")
@@ -160,11 +164,13 @@ class ClientInfoDialog(QDialog):
         self.layout.addWidget(group)
 
         group_volume_label = QLabel("Group Volume")
-        group_volume_label.setToolTip("Volume of the group the client belongs to")
+        group_volume_label.setToolTip(
+            "Volume of the group the client belongs to")
         self.layout.addWidget(group_volume_label)
 
         group_volume = QSpinBox(self)
-        group_volume.setToolTip("Change the volume of the group the client belongs to")
+        group_volume.setToolTip(
+            "Change the volume of the group the client belongs to")
         group_volume.setValue(client_info.get("group_volume", 0))
         group_volume.setMinimum(0)
         group_volume.setMaximum(100)
@@ -176,38 +182,38 @@ class ClientInfoDialog(QDialog):
         groups_available_label = QLabel("Groups Available")
         groups_available_label.setToolTip("Groups available to join")
         self.layout.addWidget(groups_available_label)
-        
+
         sources_label = QLabel("Sources")
         sources_label.setToolTip("Sources available to join")
         self.layout.addWidget(sources_label)
-        
+
         sources_dropdown = QComboBox()
         for source in sources_dictionary:
             sources_dropdown.addItem(source)
         sources_dropdown.setToolTip("Change the source of the client")
         self.layout.addWidget(sources_dropdown)
-        
+
         self.setLayout(self.layout)
 
     def closeEvent(self, event) -> None:
-        logging.debug("Client Info Dialog: Closed.")
+        self.logger.debug("Closed.")
         event.accept()
 
     def change_muted_state(self, client_info: dict, mute_button: QPushButton) -> None:
-        logging.debug("Client Info Dialog: Muted state changed.")
+        self.logger.debug("Muted state changed.")
         identifier = str(client_info.get("identifier", ""))
         self.mainwindow.change_muted_state(identifier)
         if self.muted.isChecked():
-            logging.debug("Client Info Dialog: Muted.")
+            self.logger.debug("Muted.")
             self.muted.setText("Unmute")
             mute_button.setIcon(QIcon.fromTheme("audio-volume-muted"))
         else:
-            logging.debug("Client Info Dialog: Unmuted.")
+            self.logger.debug("Unmuted.")
             self.muted.setText("Mute")
             mute_button.setIcon(QIcon.fromTheme("audio-volume-high"))
 
     def check_version(self):
-        logging.debug("Client Info Dialog: Checking version.")
+        self.logger.debug("Checking version.")
         self.check_version_button.setText("Checking...")
         git_url = QUrl(SnapcastGuiVariables.snapcast_github_url)
         self.get_latest_version(git_url)
@@ -228,10 +234,10 @@ class ClientInfoDialog(QDialog):
                 latest_version = json_data.get("tag_name", "")
                 self.latest_version_fetched.emit(latest_version)
             except Exception as e:
-                logging.error(f"Error parsing version data: {str(e)}")
+                self.logger.error(f"Error parsing version data: {str(e)}")
                 self.latest_version_fetched.emit("")
         else:
-            logging.error(f"Network error occurred: {reply.errorString()}")
+            self.logger.error(f"Network error occurred: {reply.errorString()}")
             self.latest_version_fetched.emit("")
         reply.deleteLater()
 
@@ -239,14 +245,15 @@ class ClientInfoDialog(QDialog):
     def on_version_fetched_response(self, version):
         self.check_version_button.setText("Check Version")
         if version:
-            logging.debug("Client Info Dialog: Latest version is {}.".format(version))
+            self.logger.debug("Latest version is {}.".format(version))
             QMessageBox.information(
                 self,
                 "Client is up to date",
-                "Client is up to date. The latest version is {}.".format(version),
+                "Client is up to date. The latest version is {}.".format(
+                    version),
             )
         else:
-            logging.error("Client Info Dialog: Error checking version.")
+            self.logger.error("Error checking version.")
             QMessageBox.critical(
                 self,
                 "Error",

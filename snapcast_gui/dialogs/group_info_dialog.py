@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 
 
 class GroupInfoDialog(QDialog):
-    """A class to create a dialog window to display group information.
-    """
+    """A class to create a dialog window to display group information."""
+
     def __init__(
         self,
         client_info: dict,
@@ -33,19 +33,22 @@ class GroupInfoDialog(QDialog):
         log_level: int = logging.DEBUG,
     ) -> None:
         super().__init__()
-        logging.getLogger().setLevel(log_level)
-        
-        logging.debug("Group Info Dialog: Created for client {}.".format(client_info.get("identifier", "Unknown")))
-        
+        self.logger = logging.getLogger("GroupInfoDialog")
+        self.logger.setLevel(log_level)
+
+        self.logger.debug("Created for client {}.".format(
+            client_info.get("identifier", "Unknown")))
+
         self.setWindowTitle(
-            "Group Info for {}".format(client_info.get("friendly_name", "Unknown"))
+            "Group Info for {}".format(
+                client_info.get("friendly_name", "Unknown"))
         )
-        
+
         self.layout = QVBoxLayout()
-        
+
         name_label = QLabel("Name")
         self.layout.addWidget(name_label)
-        
+
         name = QTextEdit(client_info.get("friendly_name", "Unknown"))
         name.setToolTip("Group's name")
         name.setFixedHeight(30)
@@ -56,27 +59,27 @@ class GroupInfoDialog(QDialog):
                 name.toPlainText(),
             ))
         self.layout.addWidget(name)
-        
+
         identifier_label = QLabel("Identifier")
         self.layout.addWidget(identifier_label)
-        
+
         identifier = QLabel(client_info.get("identifier", "Unknown"))
         identifier.setToolTip("Group's identifier")
         self.layout.addWidget(identifier)
-        
+
         volume_label = QLabel("Volume")
         self.layout.addWidget(volume_label)
-        
+
         volume = QSpinBox(self)
         volume.setToolTip("Change the volume of the client")
         volume.setValue(client_info.get("volume", 0))
         volume.setMinimum(0)
         volume.setMaximum(100)
         self.layout.addWidget(volume)
-        
+
         sources_label = QLabel("Sources")
         self.layout.addWidget(sources_label)
-        
+
         sources_dropdown = QComboBox(self)
         sources_dropdown.setToolTip("Change the source of the group")
         sources_dropdown.addItems(sources_dictionary.keys())
@@ -84,12 +87,13 @@ class GroupInfoDialog(QDialog):
             partial(
                 mainwindow.change_group_source,
                 client_info.get("identifier", "Unknown"),
-                sources_dictionary.get(sources_dropdown.currentText(), "Unknown"),
+                sources_dictionary.get(
+                    sources_dropdown.currentText(), "Unknown"),
             ))
-        sources_dropdown.setCurrentText(client_info.get("source_name", "Unknown"))
+        sources_dropdown.setCurrentText(
+            client_info.get("source_name", "Unknown"))
         self.layout.addWidget(sources_dropdown)
-        
-        
+
         self.muted = QPushButton("Muted", self)
         self.muted.setCheckable(True)
         if client_info.get("muted", False):
@@ -101,5 +105,5 @@ class GroupInfoDialog(QDialog):
         self.muted.setToolTip("Change the mute state of the client")
 
     def closeEvent(self, event) -> None:
-        logging.debug("Client Info Dialog: Closed.")
+        self.logger.debug("Closed.")
         event.accept()

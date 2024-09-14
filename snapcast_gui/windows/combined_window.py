@@ -39,7 +39,8 @@ class CombinedWindow(QMainWindow):
         """
         super().__init__()
         self.log_level = log_level
-        logging.getLogger().setLevel(self.log_level)
+        self.logger = logging.getLogger("CombinedWindow")
+        self.logger.setLevel(self.log_level)
 
         self.settings_window = settings_window
         self.server_window = server_window
@@ -94,13 +95,13 @@ class CombinedWindow(QMainWindow):
         """
         Toggles the settings window.
         """
-        logging.debug("combinedwindow: Toggling settings window")
+        self.logger.debug("Toggling settings window")
         if self.settings_window.isVisible():
             self.settings_window.hide()
-            logging.debug("combinedwindow: Hiding settings window")
+            self.logger.debug("Hiding settings window")
         else:
             self.settings_window.show()
-            logging.debug("combinedwindow: Showing settings window")
+            self.logger.debug("Showing settings window")
 
     def toggle_server_window(self) -> None:
         """
@@ -118,30 +119,32 @@ class CombinedWindow(QMainWindow):
         source_generator_dialog = ServerSourceStrGeneratorDialog(self, self.log_level)
         source_generator_dialog.exec()
 
+
     def find_program(self, program_name: str) -> str:
-        if sys.platform != "win32":
+        if sys.platform in ["linux", "darwin"]:
             path_dirs = os.environ.get("PATH")
             if path_dirs:
                 for directory in path_dirs.split(os.pathsep):
                     program_path = os.path.join(directory, program_name)
-                    if os.path.exists(program_path):
+                    if os.path.exists(program_path) and os.access(program_path, os.X_OK):
                         return program_path
 
             dialog = PathInputDialog(program_name, self.log_level)
             if dialog.exec() == QDialog.Accepted:
                 program_path = dialog.get_path()
-                if os.path.exists(program_path):
+                if os.path.exists(program_path) and os.access(program_path, os.X_OK):
                     return program_path
-        else:
+
+        elif sys.platform == "win32": 
             dialog = PathInputDialog(program_name, self.log_level)
             if dialog.exec() == QDialog.Accepted:
                 program_path = dialog.get_path()
                 if os.path.exists(program_path):
                     return program_path
 
+
         raise Exception(
-            f"Unable to find path for program: {
-                program_name} and no valid path provided by user"
+            f"Unable to find path for program: {program_name} and no valid path provided by user"
         )
 
     def update_paths(self) -> None:
@@ -196,19 +199,19 @@ class CombinedWindow(QMainWindow):
                     )
 
         except Exception as e:
-            logging.error(f"combinedwindow: Error updating paths: {e}")
+            self.logger.error(f"Error updating paths: {e}")
 
     def load_selected_theme(self):
         """
         Loads the theme selected by the user in the settings window if available.
         """
-        logging.debug("combinedwindow: Loading selected theme")
+        self.logger.debug("Loading selected theme")
         try:
             theme = self.snapcast_settings.read_setting("Themes/Current_Theme")
-            logging.debug(f"combinedwindow: Theme: {theme}")
+            self.logger.debug(f"Theme: {theme}")
             if theme:
                 available_styles = QStyleFactory.keys()
-                logging.debug(f"combinedwindow: Available themes: {available_styles}")
+                self.logger.debug(f"Available themes: {available_styles}")
                 if theme in available_styles:
                     QApplication.setStyle(theme)
                 else:
@@ -219,22 +222,22 @@ class CombinedWindow(QMainWindow):
                         QMessageBox.Yes | QMessageBox.No,
                     )
                     if QMessageBox.Yes:
-                        logging.debug("combinedwindow: Using default theme")
+                        self.logger.debug("Using default theme")
                         theme = self.find_default_theme()
                         self.snapcast_settings.update_setting("Themes/Current_Theme", theme)
-                        logging.debug(f"combinedwindow: Selected theme: {theme}")
+                        self.logger.debug(f"Selected theme: {theme}")
                     else:
-                        logging.debug("combinedwindow: No matching theme found")
+                        self.logger.debug("No matching theme found")
                         theme = QApplication.style().objectName()
                         self.snapcast_settings.update_setting("Themes/Current_Theme", theme)
-                        logging.debug(f"combinedwindow: Default theme: {theme}")
+                        self.logger.debug(f"Default theme: {theme}")
             else:
-                logging.debug("combinedwindow: No theme selected")
+                self.logger.debug("No theme selected")
                 theme = self.find_default_theme()
                 self.snapcast_settings.update_setting("Themes/Current_Theme", theme)
-                logging.debug(f"combinedwindow: Default theme: {theme}")
+                self.logger.debug(f"Default theme: {theme}")
         except Exception as e:
-            logging.error(f"combinedwindow: Error loading theme {theme}: {e}")
+            self.logger.error(f"Error loading theme {theme}: {e}")
 
     def find_default_theme(self) -> str:
         """
@@ -243,12 +246,23 @@ class CombinedWindow(QMainWindow):
         Returns:
         - The default theme for the application.
         """
-        logging.debug("combinedwindow: Finding default theme")
+        self.logger.debug("Finding default theme")
         theme = QApplication.style().objectName()
         available_themes = QStyleFactory.keys()
         for available_theme in available_themes:
             if available_theme.lower() == theme.lower():
-                logging.debug(f"combinedwindow: Default theme found: {available_theme}")
+                self.logger.debug(f"Default theme found: {available_theme}")
                 return available_theme
-        logging.debug(f"combinedwindow: Default theme not found, using the default application object style: {theme}")
+        self.logger.debug(f"Default theme not found, using the default application object style: {theme}")
         return theme
+    
+    def download_snapclient(self) -> None:
+        """Downloads the snapclient executable for supported plaforms (Windows)
+        """
+        if sys.platform == "win32":
+            logging.debug()
+    
+    def update_snapclient(self) -> None:
+        """Updates the snapclient executable for supported platforms (Windows)
+        """
+        raise NotImplementedError("Still need to implement the update functionanlity")

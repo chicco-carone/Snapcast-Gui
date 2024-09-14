@@ -49,7 +49,8 @@ class TrayIcon(QSystemTrayIcon):
         self.setVisible(True)
         self.setToolTip("Snapcast Gui")
 
-        logging.getLogger().setLevel(log_level)
+        self.logger = logging.getLogger("SnapcastGuiVariables")
+        self.logger.setLevel(log_level)
 
         self.main_window = main_window
         self.client_window = client_window
@@ -101,11 +102,11 @@ class TrayIcon(QSystemTrayIcon):
         If the combined window is visible, it will be hidden. If it is hidden, it will be shown.
         """
         if self.combined_window.isVisible():
-            logging.debug("trayicon: Hiding combined window")
+            self.logger.debug("Hiding combined window")
             self.combined_window.hide()
             self.toggle_combined_window_action.setText("Show")
         else:
-            logging.debug("trayicon: Showing combined window")
+            self.logger.debug("Showing combined window")
             self.combined_window.show()
             self.toggle_combined_window_action.setText("Hide")
 
@@ -116,11 +117,11 @@ class TrayIcon(QSystemTrayIcon):
         If the Snapclient process is not running, it will be started. If it is running, it will be stopped.
         """
         if self.client_window.snapclient_process is None:
-            logging.debug("trayicon: Starting Snapclient")
+            self.logger.debug("Starting Snapclient")
             self.client_window.run_snapclient()
             self.toggle_snapclient_action.setText("Stop Snapclient")
         else:
-            logging.debug("trayicon: Stopping Snapclient")
+            self.logger.debug("Stopping Snapclient")
             self.client_window.stop_snapclient()
             self.toggle_snapclient_action.setText("Start Snapclient")
 
@@ -131,11 +132,11 @@ class TrayIcon(QSystemTrayIcon):
         If the Snapserver process is not running, it will be started. If it is running, it will be stopped.
         """
         if self.server_window.snapserver_process is None:
-            logging.debug("trayicon: Starting Snapserver")
+            self.logger.debug("Starting Snapserver")
             self.server_window.run_snapserver()
             self.toggle_snapserver_action.setText("Stop Snapserver")
         else:
-            logging.debug("trayicon: Stopping Snapserver")
+            self.logger.debug("Stopping Snapserver")
             self.server_window.stop_snapserver()
             self.toggle_snapserver_action.setText("Start Snapserver")
 
@@ -151,7 +152,7 @@ class TrayIcon(QSystemTrayIcon):
         Shortcut actions are connected to their respective functions and logging statements are added
         to indicate when each shortcut is activated.
         """
-        logging.debug("trayicon: Loading shortcuts")
+        self.logger.debug("Loading shortcuts")
         self.settings_shortcut = QShortcut(
             QKeySequence(
                 self.snapcast_settings.read_setting("Shortcuts/Open_Settings")
@@ -162,7 +163,7 @@ class TrayIcon(QSystemTrayIcon):
             self.combined_window.toggle_settings_window
         )
         self.settings_shortcut.activated.connect(
-            lambda: logging.debug("trayicon: Open settings shortcut activated")
+            lambda: self.logger.debug("Open settings shortcut activated")
         )
         self.snapserver_shortcut = QShortcut(
             QKeySequence(
@@ -174,7 +175,7 @@ class TrayIcon(QSystemTrayIcon):
             self.combined_window.toggle_server_window
         )
         self.snapserver_shortcut.activated.connect(
-            lambda: logging.debug("trayicon: Toggle Snapserver shortcut activated")
+            lambda: self.logger.debug("Toggle Snapserver shortcut activated")
         )
         self.snapclient_shortcut = QShortcut(
             QKeySequence(
@@ -184,7 +185,7 @@ class TrayIcon(QSystemTrayIcon):
         )
         self.snapclient_shortcut.activated.connect(self.client_window.toggle_snapclient)
         self.snapclient_shortcut.activated.connect(
-            lambda: logging.debug("trayicon: Toggle Snapclient shortcut activated")
+            lambda: self.logger.debug("Toggle Snapclient shortcut activated")
         )
         self.quit_shortcut = QShortcut(
             QKeySequence(self.snapcast_settings.read_setting("Shortcuts/Quit")),
@@ -192,7 +193,7 @@ class TrayIcon(QSystemTrayIcon):
         )
         self.quit_shortcut.activated.connect(QApplication.quit)
         self.quit_shortcut.activated.connect(
-            lambda: logging.debug("trayicon: Quit shortcut activated")
+            lambda: self.logger.debug("Quit shortcut activated")
         )
         self.hide_shortcut = QShortcut(
             QKeySequence(self.snapcast_settings.read_setting("Shortcuts/Hide")),
@@ -200,5 +201,5 @@ class TrayIcon(QSystemTrayIcon):
         )
         self.hide_shortcut.activated.connect(self.combined_window.hide)
         self.hide_shortcut.activated.connect(
-            lambda: logging.debug("trayicon: Hide shortcut activated")
+            lambda: self.logger.debug("Hide shortcut activated")
         )

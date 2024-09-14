@@ -18,7 +18,8 @@ class SnapcastSettings:
         Args:
             log_level: The log level to set for the application.
         """
-        logging.getLogger().setLevel(log_level)
+        self.logger = logging.getLogger("SnapcastSettings")
+        self.logger.setLevel(log_level)
 
         self.ensure_settings()
 
@@ -61,7 +62,7 @@ class SnapcastSettings:
         settings = QSettings(SnapcastGuiVariables.settings_file_path, QSettings.IniFormat)
         settings.setValue(key, value)
         settings.sync()
-        logging.debug("snapcastsettings: Updated setting: {} = {}".format(key, value))
+        self.logger.debug("Updated setting: {} = {}".format(key, value))
 
     def read_setting(self, setting_name: str)-> str:
         """
@@ -79,8 +80,8 @@ class SnapcastSettings:
                 value = True
             elif value.lower() == "false":
                 value = False
-        logging.debug(
-            "snapcastsettings: Read setting: {} = {}, type {}".format(
+        self.logger.debug(
+            "Read setting: {} = {}, type {}".format(
                 setting_name, value, type(value)
             )
         )
@@ -106,18 +107,18 @@ class SnapcastSettings:
             for ip_address in ip_addresses:
                 if ip_address == "":
                     ip_addresses.remove(ip_address)
-            logging.debug("snapcastsettings: Read config file: {}".format(ip_addresses))
+            self.logger.debug("Read config file: {}".format(ip_addresses))
             return ip_addresses
         except IsADirectoryError:
             os.removedirs(os.path.dirname(SnapcastGuiVariables.config_file_path))
-            logging.error(
-                "snapcastsettings: File path is a directory: {}. Removing directory".format(
+            self.logger.error(
+                "File path is a directory: {}. Removing directory".format(
                     SnapcastGuiVariables.config_file_path
                 )
             )
             return []
         except Exception as e:
-            logging.error("snapcastsettings: Error reading config file: {}".format(e))
+            self.logger.error("Error reading config file: {}".format(e))
             return []
 
     def add_ip(self, ip: str) -> None:
@@ -134,12 +135,12 @@ class SnapcastSettings:
             settings.setValue("SERVER/ip_addresses", ",".join(ip_addresses))
             settings.sync()
         except Exception as e:
-            logging.error(
-                f"snapcastsettings: Could not add IP Address to config file: {str(e)}"
+            self.logger.error(
+                f"Could not add IP Address to config file: {str(e)}"
             )
             return
-        logging.debug(
-            "snapcastsettings: IP Address {} added to config file.".format(ip)
+        self.logger.debug(
+            "IP Address {} added to config file.".format(ip)
         )
 
     def remove_ip(self, ip: str) -> None:
@@ -156,10 +157,10 @@ class SnapcastSettings:
             settings.setValue("SERVER/ip_addresses", ",".join(ip_addresses))
             settings.sync()
         except Exception as e:
-            logging.error(
-                f"snapcastsettings: Could not remove IP Address from config file: {str(e)}"
+            self.logger.error(
+                f"Could not remove IP Address from config file: {str(e)}"
             )
             return
-        logging.debug(
-            "snapcastsettings: IP Address {} removed from config file.".format(ip)
+        self.logger.debug(
+            "IP Address {} removed from config file.".format(ip)
         )

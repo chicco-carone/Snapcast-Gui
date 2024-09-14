@@ -40,7 +40,8 @@ class SettingsWindow(QMainWindow):
 
     def __init__(self, snapcast_settings: "SnapcastSettings", main_window: "MainWindow", log_level: int):
         super().__init__()
-        logging.getLogger().setLevel(log_level)
+        self.logger = logging.getLogger("SettingsWindow")
+        self.logger.setLevel(log_level)
 
         self.snapcast_settings = snapcast_settings
         self.main_window = main_window
@@ -122,38 +123,38 @@ class SettingsWindow(QMainWindow):
             - The `settings_layout` is assumed to be a layout object that contains the settings widgets.
             - The `shortcut_layout` and `horizontal_log_layout` are optional layouts that may exist within the`settings_layout`.
         """
-        logging.debug("Clearing settings layout")
+        self.logger.debug("Clearing settings layout")
         for i in reversed(range(self.settings_layout.count())):
             widget = self.settings_layout.itemAt(i).widget()
             if widget:
-                logging.debug(f"Removing widget: {widget}")
+                self.logger.debug(f"Removing widget: {widget}")
                 self.settings_layout.removeWidget(widget)
                 widget.setParent(None)
                 widget.deleteLater()
 
         if hasattr(self, "shortcut_layout") and self.shortcut_layout:
-            logging.debug("Shortcut layout exists, removing...")
+            self.logger.debug("Shortcut layout exists, removing...")
             while self.shortcut_layout.count():
                 item = self.shortcut_layout.takeAt(0)
                 widget = item.widget()
                 if widget:
-                    logging.debug(f"Removing shortcut widget: {widget}")
+                    self.logger.debug(f"Removing shortcut widget: {widget}")
                     widget.setParent(None)
                     widget.deleteLater()
-            logging.debug("Removing shortcut layout from main layout")
+            self.logger.debug("Removing shortcut layout from main layout")
             self.settings_layout.removeItem(self.shortcut_layout)
             self.shortcut_layout = None
 
         if hasattr(self, "horizontal_log_layout") and self.horizontal_log_layout:
-            logging.debug("Horizontal log layout exists, removing...")
+            self.logger.debug("Horizontal log layout exists, removing...")
             while self.horizontal_log_layout.count():
                 item = self.horizontal_log_layout.takeAt(0)
                 widget = item.widget()
                 if widget:
-                    logging.debug(f"Removing horizontal log widget: {widget}")
+                    self.logger.debug(f"Removing horizontal log widget: {widget}")
                     widget.setParent(None)
                     widget.deleteLater()
-            logging.debug("Removing horizontal log layout from main layout")
+            self.logger.debug("Removing horizontal log layout from main layout")
             self.settings_layout.removeItem(self.horizontal_log_layout)
             self.horizontal_log_layout = None
 
@@ -167,7 +168,7 @@ class SettingsWindow(QMainWindow):
         such as labels and a combo box for selecting the theme. It also connects the
         appropriate signals to their respective slots.
         """
-        logging.info("SettingWindow: Setting up theme settings")
+        self.logger.info("Setting up theme settings")
         theme_label = QLabel("Theme Settings")
         theme_label.setAlignment(Qt.AlignCenter)
         theme_label.setObjectName("theme_label")
@@ -199,7 +200,7 @@ class SettingsWindow(QMainWindow):
         This method retrieves the selected theme from the dropdown and sets it as the application's style.
         """
         style_name = self.theme_combo.currentText()
-        logging.debug("settingswindow: Changing theme to " + style_name)
+        self.logger.debug("Changing theme to " + style_name)
         QApplication.setStyle(style_name)
 
     def populate_theme_dropdown(self):
@@ -207,7 +208,7 @@ class SettingsWindow(QMainWindow):
         Populates the theme dropdown with the available styles (only works while using system libraries).
         """
         available_styles = QStyleFactory.keys()
-        logging.debug("settingswindow: Available styles: " + str(available_styles))
+        self.logger.debug("Available styles: " + str(available_styles))
         self.theme_combo.addItems(available_styles)
 
     def setup_snapclient_settings(self):
@@ -218,7 +219,7 @@ class SettingsWindow(QMainWindow):
         It creates labels, checkboxes, and text fields for various snapclient settings.
         It also connects the appropriate signals to update the settings when the user interacts with the UI.
         """
-        logging.info("SettingWindow: Setting up snapclient settings")
+        self.logger.info("Setting up snapclient settings")
         autostart_snapclient = self.snapcast_settings.read_setting(
             "Snapclient/autostart"
         )
@@ -297,6 +298,16 @@ class SettingsWindow(QMainWindow):
             self.custom_snapclient_path_text.setEnabled(True)
         else:
             self.custom_snapclient_path_text.setEnabled(False)
+            
+        snapclient_version_text = QLabel()
+        snapclient_version, _ = self.get_versions()
+        if snapclient_version != "":
+            snapclient_version_text.setText("Snapclient version " + snapclient_version)
+        else:
+            snapclient_version_text.setText("Can't pull snapclient version")
+        
+        self.settings_layout.addWidget(snapclient_version_text)
+        
 
     def setup_snapclient_autostart_settings(self, autostart_snapclient: bool):
         """
@@ -353,7 +364,7 @@ class SettingsWindow(QMainWindow):
         such as the snapserver label and the automatic start checkbox.
 
         """
-        logging.info("SettingWindow: Setting up snapserver settings")
+        self.logger.info("Setting up snapserver settings")
         snapserver_label = QLabel("Snapserver Settings")
         snapserver_label.setAlignment(Qt.AlignCenter)
         snapserver_label.setObjectName("snapserver_label")
@@ -392,6 +403,14 @@ class SettingsWindow(QMainWindow):
             custom_snapserver_path_text.setEnabled(True)
         else:
             custom_snapserver_path_text.setEnabled(False)
+            
+        snapserver_version_text = QLabel()
+        _ , snapserver_version = self.get_versions()
+        if snapserver_version != "":
+            snapserver_version_text.setText("Snapserver version " + snapserver_version)
+        else:
+            snapserver_version_text.setText("Can't pull snapserver version")
+        self.settings_layout.addWidget(snapserver_version_text)
 
     def setup_shortcut_settings(self):
         """
@@ -400,7 +419,7 @@ class SettingsWindow(QMainWindow):
         This method creates and configures the shortcut settings layout, including
         the shortcut labels, shortcut layout, and save shortcuts button.
         """
-        logging.info("SettingWindow: Setting up shortcut settings")
+        self.logger.info("Setting up shortcut settings")
         shortcut_label = QLabel("Shortcut Settings")
         shortcut_label.setAlignment(Qt.AlignCenter)
         shortcut_label.setObjectName("shortcut_label")
@@ -480,7 +499,7 @@ class SettingsWindow(QMainWindow):
             key = layout.itemAt(0).widget().text().replace(" ", "_")
             value = layout.itemAt(1).widget().keySequence().toString()
             self.snapcast_settings.update_setting("Shortcuts/{}".format(key), value)
-        logging.debug("settingswindow: Shortcuts saved successfully.")
+        self.logger.debug("Shortcuts saved successfully.")
 
     def setup_log_settings(self):
         """
@@ -490,7 +509,7 @@ class SettingsWindow(QMainWindow):
         and displays them in the log area. It also adds buttons to open the log file in the default text editor
         and refresh the log file.
         """
-        logging.info("settingswindow: Setting up log settings")
+        self.logger.info("Setting up log settings")
 
         log_label = QLabel("Log")
         log_label.setAlignment(Qt.AlignCenter)
@@ -501,7 +520,7 @@ class SettingsWindow(QMainWindow):
         self.log_area.setReadOnly(True)
         self.log_area.setObjectName("log_area")
         self.update_log()
-        logging.debug("settingswindow: Log file read successfully.")
+        self.logger.debug("Log file read successfully.")
         self.settings_layout.addWidget(self.log_area)
         self.settings_layout.setAlignment(Qt.AlignTop)
 
@@ -512,7 +531,7 @@ class SettingsWindow(QMainWindow):
         open_file_button = QPushButton("Open Log File")
         open_file_button.clicked.connect(lambda: self.open_file(SnapcastGuiVariables.log_file_path))
         open_file_button.clicked.connect(
-            lambda: logging.debug("settingswindow: Log file opened.")
+            lambda: self.logger.debug("Log file opened.")
         )
         open_file_button.setToolTip(
             "Opens the log file in the default text editor. {}".format(SnapcastGuiVariables.log_file_path)
@@ -536,7 +555,7 @@ class SettingsWindow(QMainWindow):
                 self.change_log_level_dropdown.setCurrentText(log_level_file.read().strip())
         except IsADirectoryError:
             os.removedirs(os.path.dirname(SnapcastGuiVariables.log_level_file_path))
-            logging.error(
+            self.logger.error(
                 f"settingswindow: Log level file path is a directory: {SnapcastGuiVariables.log_level_file_path}. Removing directory"
             )
         self.change_log_level_dropdown.currentIndexChanged.connect(
@@ -557,33 +576,33 @@ class SettingsWindow(QMainWindow):
 
     def update_log(self):
         try:
-            logging.debug("settingswindow: Updating log")
+            self.logger.debug("Updating log")
             with open(SnapcastGuiVariables.log_file_path, "r") as log_file:
                 self.log_area.setPlainText(log_file.read())
             self.log_area.moveCursor(QTextCursor.End)
             self.log_area.ensureCursorVisible()
         except Exception as e:
-            logging.debug("settingswindow: Error while updating log: {}".format(e))
+            self.logger.debug("Error while updating log: {}".format(e))
 
     def update_log_level(self):
         """
         Updates the log level in the log level file based on the selected log level in the dropdown
         """
-        logging.info("settingswindow: Updating log level")
+        self.logger.info("Updating log level")
         try:
             with open(SnapcastGuiVariables.log_level_file_path, "w") as log_level_file:
                 log_level_file.truncate(0)
                 log_level_file.write(self.change_log_level_dropdown.currentText())
-                logging.debug(
+                self.logger.debug(
                     f"settingswindow: Log level updated to {self.change_log_level_dropdown.currentText()}"
                 )
         except IsADirectoryError:
             os.removedirs(os.path.dirname(SnapcastGuiVariables.log_level_file_path))
-            logging.error(
-                f"settingswindow: Log level file path is a directory: {SnapcastGuiVariables.log_level_file_path}. Removing directory"
+            self.logger.error(
+                f"Log level file path is a directory: {SnapcastGuiVariables.log_level_file_path}. Removing directory"
             )
         except Exception as e:
-            logging.error(f"settingswindow: Error updating log level: {e}")
+            self.logger.error(f"Error updating log level: {e}")
             QMessageBox.critical(self, "Error", "Error updating log level")
 
     def export_log(self):
@@ -591,7 +610,7 @@ class SettingsWindow(QMainWindow):
         Opens a dialog to select the path to export the log file.
         If no path is selected, the log file will be exported to the Downloads folder.
         """
-        logging.info("settingswindow: Exporting log file")
+        self.logger.info("Exporting log file")
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         file_path, _ = QFileDialog.getSaveFileName(
@@ -599,7 +618,7 @@ class SettingsWindow(QMainWindow):
         )
         if file_path:
             shutil.copy(SnapcastGuiVariables.log_file_path, file_path)
-            logging.debug(f"settingswindow: Log file exported to {file_path}")
+            self.logger.debug(f"settingswindow: Log file exported to {file_path}")
         else:
             downloads_folder = QStandardPaths.writableLocation(
                 QStandardPaths.DownloadLocation
@@ -607,7 +626,7 @@ class SettingsWindow(QMainWindow):
             file_name = "snapcast-gui.log"
             file_path = os.path.join(downloads_folder, file_name)
             shutil.copy(SnapcastGuiVariables.log_file_path, file_path)
-            logging.debug(f"settingswindow: Log file exported to {file_path}")
+            self.logger.debug(f"settingswindow: Log file exported to {file_path}")
 
     def setup_about_settings(self):
         """
@@ -616,7 +635,7 @@ class SettingsWindow(QMainWindow):
         This method adds labels to the settings layout to display information about the Snapcast-Gui version,
         Snapclient version, and Snapserver version.
         """
-        logging.info("settingswindow: Setting up about settings")
+        self.logger.info("Setting up about settings")
         about_label = QLabel("About")
         about_label.setAlignment(Qt.AlignCenter)
         about_label.setObjectName("about_label")
@@ -690,8 +709,8 @@ class SettingsWindow(QMainWindow):
         snapserver_version = subprocess.run(
             [self.snapcast_settings.read_setting("Snapserver/Custom_Path"), "--version"], capture_output=True, text=True
         ).stdout.split()[1]
-        logging.debug(f"settingswindow: Snapclient version: {snapclient_version}")
-        logging.debug(f"settingswindow: Snapserver version: {snapserver_version}")
+        self.logger.debug(f"Snapclient version: {snapclient_version}")
+        self.logger.debug(f"Snapserver version: {snapserver_version}")
         return snapclient_version, snapserver_version
 
     def open_file(self, file_path: str):
@@ -702,4 +721,4 @@ class SettingsWindow(QMainWindow):
             file_path: The path to the file to be opened.
         """
         QDesktopServices.openUrl(QUrl.fromLocalFile(file_path))
-        logging.debug(f"settingswindow: Opening file at {file_path}")
+        self.logger.debug(f"Opening file at {file_path}")

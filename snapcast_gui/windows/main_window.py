@@ -33,6 +33,7 @@ from snapcast_gui.windows.client_window import ClientWindow
 from snapcast_gui.dialogs.client_info_dialog import ClientInfoDialog
 from snapcast_gui.dialogs.group_info_dialog import GroupInfoDialog
 from snapcast_gui.dialogs.server_info_dialog import ServerInfoDialog
+from snapcast_gui.misc.logger_setup import LoggerSetup
 
 from typing import Dict, Optional, Any, List
 
@@ -44,7 +45,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self, snapcast_settings: SnapcastSettings, client_window: ClientWindow, log_level: int):
         super(MainWindow, self).__init__()
-        logging.getLogger().setLevel(log_level)
+        self.logger = logging.getLogger("MainWindow")
+        self.logger.setLevel(log_level)
 
         self.snapcast_settings: SnapcastSettings = snapcast_settings
         self.client_window: ClientWindow = client_window
@@ -140,8 +142,8 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(
                 self, "Warning", "IP Address already exists in the config file."
             )
-            logging.warning(
-                "mainwindow: IP Address already exists in the config file.")
+            self.logger.warning(
+                "IP Address already exists in the config file.")
             return
 
         self.ip_addresses.append(str(self.ip_input.text()))
@@ -152,18 +154,16 @@ class MainWindow(QMainWindow):
 
         try:
             self.snapcast_settings.add_ip(str(self.ip_dropdown.currentText()))
-            logging.info("mainwindow: IP Address added to config file.")
+            self.logger.info("IP Address added to config file.")
             QMessageBox.information(
                 self, "Success", "IP Address added to config file.")
             self.client_window.populate_ip_dropdown()
         except Exception as e:
             QMessageBox.critical(
-                self, "Error", f"Could not add IP Address to config file: {
-                    str(e)}"
+                self, "Error", f"Could not add IP Address to config file: {str(e)}"
             )
-            logging.error(
-                f"mainwindow: Could not add IP Address to config file: {
-                    str(e)}"
+            self.logger.error(
+                f"mainwindow: Could not add IP Address to config file: {str(e)}"
             )
             return
 
@@ -181,8 +181,8 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(
                 self, "Warning", "IP Address does not exist in the config file."
             )
-            logging.warning(
-                "mainwindow: IP Address does not exist in the config file.")
+            self.logger.warning(
+                "IP Address does not exist in the config file.")
             return
         selected_index = self.ip_dropdown.currentIndex()
         selected_text = self.ip_dropdown.itemText(selected_index)
@@ -190,7 +190,7 @@ class MainWindow(QMainWindow):
         self.ip_dropdown.removeItem(selected_index)
         try:
             self.snapcast_settings.remove_ip(selected_text)
-            logging.info("mainwindow: IP Address removed from config file.")
+            self.logger.info("IP Address removed from config file.")
             QMessageBox.information(
                 self, "Success", "IP Address removed from config file."
             )
@@ -200,7 +200,7 @@ class MainWindow(QMainWindow):
                 self, "Error", f"Could not remove IP Address from config file: {
                     str(e)}"
             )
-            logging.error(
+            self.logger.error(
                 f"mainwindow: Could not remove IP Address from config file: {
                     str(e)}"
             )
@@ -222,11 +222,11 @@ class MainWindow(QMainWindow):
         if result != 0:
             QMessageBox.critical(
                 self, "Error", "Server is not online or unreachable.")
-            logging.error("mainwindow: Server is not online or unreachable.")
+            self.logger.error("Server is not online or unreachable.")
             return
 
         try:
-            logging.info("mainwindow: Connecting to server.")
+            self.logger.info("Connecting to server.")
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
 
@@ -237,7 +237,7 @@ class MainWindow(QMainWindow):
                 create_server(self.loop, ip_value)
             )
             self.connected_ip = ip_value
-            logging.info(f"mainwindow: Connected to server {ip_value}.")
+            self.logger.info(f"Connected to server {ip_value}.")
             Notifications.send_notify("Connected to server {}.".format(
                 ip_value), "Snapcast Gui")
 
@@ -252,7 +252,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(
                 self, "Error", f"Could not connect to server: {str(e)}"
             )
-            logging.error(f"mainwindow: Could not connect to server: {str(e)}")
+            self.logger.error(f"Could not connect to server: {str(e)}")
             self.connect_button.setText("Connect")
             self.connect_button.setEnabled(True)
             return
@@ -264,11 +264,11 @@ class MainWindow(QMainWindow):
         Returns:
             sources_dict (dict): A dictionary containing the sources friendly name and unique identifier.
         """
-        logging.debug("mainwindow: Creating sources list.")
+        self.logger.debug("Creating sources list.")
         sources_dict: Dict[str, str] = {}
         if self.server is not None:
             for source in self.server.streams:
-                logging.debug(f"mainwindow: Source {source.identifier} found.")
+                self.logger.debug(f"Source {source.identifier} found.")
                 sources_dict[source.friendly_name] = source.identifier
         return sources_dict
 
@@ -276,7 +276,7 @@ class MainWindow(QMainWindow):
         """
         Creates the volume sliders, info button, mute button, and the client name text box for each client connected to the server.
         """
-        logging.debug("mainwindow: Creating volume sliders.")
+        self.logger.debug("Creating volume sliders.")
         if self.server is None:
             return
         self.slider_widgets: List[QLayout] = []
@@ -288,8 +288,8 @@ class MainWindow(QMainWindow):
 
         for client in self.server.clients:
             if self.show_offline_clients_button.isChecked() or client.connected:
-                logging.debug(
-                    f"mainwindow: Creating volume slider for {client.identifier}. {client.friendly_name}."
+                self.logger.debug(
+                    f"Creating volume slider for {client.identifier}. {client.friendly_name}."
                 )
                 client_layout = QHBoxLayout()
 
@@ -379,10 +379,10 @@ class MainWindow(QMainWindow):
                         widget = client_layout.itemAt(i).widget()
                         if isinstance(widget, QSlider):
                             widget.setValue(value)
-                    logging.debug("mainwindow: Slider value updated for {} to {}.".format(client_id, value))
+                    self.logger.debug("Slider value updated for {} to {}.".format(client_id, value))
                     break
         except Exception as e:
-            logging.error("mainwindow: Error updating slider value for {}: {}".format(client_id, str(e)))
+            self.logger.error("Error updating slider value for {}: {}".format(client_id, str(e)))
 
     """Methods to interact with clients."""
 
@@ -406,18 +406,18 @@ class MainWindow(QMainWindow):
                     ),
                     None,
                 )
-                logging.debug(
-                    f"mainwindow: Changing volume for client {client_id} to {volume}."
+                self.logger.debug(
+                    f"Changing volume for client {client_id} to {volume}."
                 )
             else:
-                logging.warning("mainwindow: Server is not available.")
+                self.logger.warning("Server is not available.")
             if client:
                 self.loop.run_until_complete(client.set_volume(volume))
-                logging.debug(
-                    f"mainwindow: Volume changed for client {client_id} to {volume}."
+                self.logger.debug(
+                    f"Volume changed for client {client_id} to {volume}."
                 )
             else:
-                logging.warning("mainwindow: Client not found with the provided ID.")
+                self.logger.warning("Client not found with the provided ID.")
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -433,7 +433,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.Ok,
                 QMessageBox.NoButton,
             )
-            logging.warning(f"mainwindow: Could not change volume for client: {str(e)}")
+            self.logger.warning(f"Could not change volume for client: {str(e)}")
 
 
     def change_muted_state(self, client_id: str) -> None:
@@ -461,12 +461,12 @@ class MainWindow(QMainWindow):
             if client:
                 self.loop.run_until_complete(
                     client.set_muted(not client.muted))
-                logging.debug(
-                    f"mainwindow: Muted state changed for client {client_id}."
+                self.logger.debug(
+                    f"Muted state changed for client {client_id}."
                 )
             else:
-                logging.warning(
-                    "mainwindow: Client not found with the provided ID.")
+                self.logger.warning(
+                    "Client not found with the provided ID.")
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -482,8 +482,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.Ok,
                 QMessageBox.NoButton,
             )
-            logging.warning(
-                f"mainwindow: Could not change muted state for client: {
+            self.logger.warning(
+                f"Could not change muted state for client: {
                     str(e)}"
             )
 
@@ -515,8 +515,8 @@ class MainWindow(QMainWindow):
                         button.setIcon(QIcon.fromTheme("audio-volume-muted"))
                     self.change_muted_state(client_uid)
             else:
-                logging.warning(
-                    "mainwindow: Client not found with the provided UID.")
+                self.logger.warning(
+                    "Client not found with the provided UID.")
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -532,8 +532,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.Ok,
                 QMessageBox.NoButton,
             )
-            logging.warning(
-                f"mainwindow: Could not change button icon for client: {
+            self.logger.warning(
+                f"Could not change button icon for client: {
                     str(e)}"
             )
 
@@ -559,8 +559,8 @@ class MainWindow(QMainWindow):
                 client = None
             if client:
                 self.loop.run_until_complete(client.set_name(qtextedit_text))
-                logging.debug(
-                    f"mainwindow: Name changed for client {client_uid} to {qtextedit_text}."
+                self.logger.debug(
+                    f"Name changed for client {client_uid} to {qtextedit_text}."
                 )
         except Exception as e:
             QMessageBox.critical(
@@ -570,8 +570,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.Ok,
                 QMessageBox.NoButton,
             )
-            logging.warning(
-                f"mainwindow: Could not change name for client: {str(e)}")
+            self.logger.warning(
+                f"Could not change name for client: {str(e)}")
 
     def change_latency(self, client_uid: str, new_latency: int) -> None:
         """
@@ -594,13 +594,13 @@ class MainWindow(QMainWindow):
                 client = None
             if client:
                 self.loop.run_until_complete(client.set_latency(new_latency))
-                logging.debug(
-                    f"mainwindow: Latency changed for client {
+                self.logger.debug(
+                    f"Latency changed for client {
                         client_uid} to {new_latency}."
                 )
             else:
-                logging.warning(
-                    "mainwindow: Client not found with the provided UID.")
+                self.logger.warning(
+                    "Client not found with the provided UID.")
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -616,8 +616,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.Ok,
                 QMessageBox.NoButton,
             )
-            logging.warning(
-                f"mainwindow: Could not change latency for client: {str(e)}"
+            self.logger.warning(
+                f"Could not change latency for client: {str(e)}"
             )
 
     def change_group_volume(self, client_uid: str, volume: int) -> None:
@@ -641,13 +641,13 @@ class MainWindow(QMainWindow):
                 client = None
             if client:
                 self.loop.run_until_complete(client.group.set_volume(volume))
-                logging.debug(
-                    f"mainwindow: Group volume changed for client {
+                self.logger.debug(
+                    f"Group volume changed for client {
                         client_uid} to {volume}."
                 )
             else:
-                logging.warning(
-                    "mainwindow: Client not found with the provided UID.")
+                self.logger.warning(
+                    "Client not found with the provided UID.")
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -663,8 +663,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.Ok,
                 QMessageBox.NoButton,
             )
-            logging.warning(
-                f"mainwindow: An error occurred while changing group volume: {
+            self.logger.warning(
+                f"An error occurred while changing group volume: {
                     str(e)}"
             )
 
@@ -693,13 +693,13 @@ class MainWindow(QMainWindow):
             if client:
                 self.loop.run_until_complete(
                     client.group.set_name(str(group_name)))
-                logging.debug(
-                    f"mainwindow: Group name changed for client {
+                self.logger.debug(
+                    f"Group name changed for client {
                         client_uid} to {group_name}."
                 )
             else:
-                logging.warning(
-                    "mainwindow: Client not found with the provided UID.")
+                self.logger.warning(
+                    "Client not found with the provided UID.")
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -715,8 +715,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.Ok,
                 QMessageBox.NoButton,
             )
-            logging.warning(
-                f"mainwindow: An error occurred while changing group name: {
+            self.logger.warning(
+                f"An error occurred while changing group name: {
                     str(e)}"
             )
 
@@ -729,26 +729,26 @@ class MainWindow(QMainWindow):
             QMessageBox.critical: If an error occurs while changing the source.
         """
         try:
-            logging.debug(f"Attempting to find client with UID: {client_uid}")
+            self.logger.debug(f"Attempting to find client with UID: {client_uid}")
             if self.server:
                 client = self.server.client(client_uid)
             else:
-                logging.warning("mainwindow: Server is not available.")
+                self.logger.warning("Server is not available.")
                 return
             if not client:
                 error_message = f"Client with UID {client_uid} not found."
-                logging.error(error_message)
+                self.logger.error(error_message)
                 QMessageBox.critical(None, "Client Not Found", error_message)
                 return
 
-            logging.debug(f"Changing stream for client {client_uid} to stream {stream_id}.")
+            self.logger.debug(f"Changing stream for client {client_uid} to stream {stream_id}.")
             group = client.group
             group.set_stream(stream_id)
-            logging.debug(f"Stream changed successfully for client {client_uid}.")
+            self.logger.debug(f"Stream changed successfully for client {client_uid}.")
 
         except Exception as e:
             error_message = f"An error occurred while changing the source: {e}"
-            logging.error(error_message)
+            self.logger.error(error_message)
             QMessageBox.critical(None, "Error", error_message)
 
     def change_group_source(self, group_id: str, stream_id: str) -> None:
@@ -759,25 +759,25 @@ class MainWindow(QMainWindow):
             stream_id: The unique identifier of the stream stream to change to.
         """
         try:
-            logging.debug(f"Attempting to find group with UID: {group_id}")
+            self.logger.debug(f"Attempting to find group with UID: {group_id}")
             if self.server:
                 group = self.server.group(group_id)
             else:
-                logging.warning("mainwindow: Server is not available.")
+                self.logger.warning("Server is not available.")
                 return
             if not group:
                 error_message = f"Group with UID {group_id} not found."
-                logging.error(error_message)
+                self.logger.error(error_message)
                 QMessageBox.critical(None, "Group Not Found", error_message)
                 return
 
-            logging.debug(f"Changing stream for group {group_id} to stream {stream_id}.")
+            self.logger.debug(f"Changing stream for group {group_id} to stream {stream_id}.")
             group.set_stream(stream_id)
-            logging.debug(f"Stream changed successfully for group {group_id}.")
+            self.logger.debug(f"Stream changed successfully for group {group_id}.")
 
         except Exception as e:
             error_message = f"An error occurred while changing the source: {e}"
-            logging.error(error_message)
+            self.logger.error(error_message)
             QMessageBox.critical(None, "Error", error_message)
 
     def remove_client(self, client_uid: str) -> None:
@@ -802,10 +802,10 @@ class MainWindow(QMainWindow):
                 client = None
             if client:
                 self.loop.run_until_complete(client.remove())
-                logging.debug(f"mainwindow: Client {client_uid} removed.")
+                self.logger.debug(f"Client {client_uid} removed.")
             else:
-                logging.warning(
-                    "mainwindow: Client not found with the provided UID.")
+                self.logger.warning(
+                    "Client not found with the provided UID.")
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -820,8 +820,8 @@ class MainWindow(QMainWindow):
                 f"An error occurred while removing client: {str(e)}",
                 QMessageBox.Ok,
             )
-            logging.warning(
-                f"mainwindow: An error occurred while removing client: {
+            self.logger.warning(
+                f"An error occurred while removing client: {
                     str(e)}"
             )
 
@@ -845,10 +845,10 @@ class MainWindow(QMainWindow):
                         "group_volume": client.group.volume,
                         "version": client.version,
                     }
-                    logging.debug(f"mainwindow: Client Info for {client_id} found.")
+                    self.logger.debug(f"Client Info for {client_id} found.")
                     break
             else:
-                logging.warning(f"mainwindow: Client {client_id} not found in client dictionary.")
+                self.logger.warning(f"Client {client_id} not found in client dictionary.")
                 QMessageBox.critical(
                     self,
                     "Error",
@@ -858,7 +858,7 @@ class MainWindow(QMainWindow):
                 )
                 return
         else:
-            logging.warning("mainwindow: Server is not available.")
+            self.logger.warning("Server is not available.")
             QMessageBox.critical(
                 self,
                 "Error",
@@ -878,13 +878,13 @@ class MainWindow(QMainWindow):
             self.log_level,
         )
         dialog.exec()
-        logging.debug("mainwindow: Client Info Dialog shown.")
+        self.logger.debug("Client Info Dialog shown.")
 
     def show_server_info(self) -> None:
         """
         Shows the server info dialog for the server.
         """
-        logging.debug("mainwindow: Showing server info dialog.")
+        self.logger.debug("Showing server info dialog.")
         if self.server:
             server_info_json = json.dumps(self.loop.run_until_complete(self.server.status()))
 
@@ -916,7 +916,7 @@ class MainWindow(QMainWindow):
                 widget.deleteLater()
 
         self.loop.close()
-        logging.info("mainwindow: Disconnected from server.")
+        self.logger.info("Disconnected from server.")
         Notifications.send_notify("Disconnected from server.", "Snapcast Gui")
 
         self.connect_button.setText("Connect")
@@ -928,7 +928,7 @@ class MainWindow(QMainWindow):
         """
         Disables the controls when needed to connect to the server.
         """
-        logging.debug("mainwindow: Disabling controls.")
+        self.logger.debug("Disabling controls.")
         self.ip_input.setEnabled(False)
         self.ip_dropdown.setEnabled(False)
         self.add_ip_button.setEnabled(False)
@@ -939,7 +939,7 @@ class MainWindow(QMainWindow):
         """
         Enables the controls when needed to disconnect from the server.
         """
-        logging.debug("mainwindow: Enabling controls.")
+        self.logger.debug("Enabling controls.")
         self.ip_input.setEnabled(True)
         self.ip_dropdown.setEnabled(True)
         self.add_ip_button.setEnabled(True)
@@ -977,4 +977,4 @@ class MainWindow(QMainWindow):
             log_level,
         )
         self.tray_icon.show()
-        logging.debug("mainwindow: Tray Icon created.")
+        self.logger.debug("Tray Icon created.")

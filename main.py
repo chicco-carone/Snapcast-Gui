@@ -6,7 +6,6 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
 
-
 from snapcast_gui.windows.combined_window import CombinedWindow
 from snapcast_gui.fileactions.file_folder_checks import FileFolderChecks
 from snapcast_gui.windows.main_window import MainWindow
@@ -17,6 +16,7 @@ from snapcast_gui.windows.settings_window import SettingsWindow
 
 from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
 from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
+from snapcast_gui.misc.logger_setup import LoggerSetup
 
 def read_log_level(log_level_file_path: str) -> int:
     """
@@ -69,26 +69,12 @@ def open_file(file_path: str) -> None:
     url = QUrl.fromLocalFile(file_path)
     QDesktopServices.openUrl(url)
     app.exit()
+    
+log_level = read_log_level(SnapcastGuiVariables.log_level_file_path)
+log_file_path = SnapcastGuiVariables.log_file_path
+LoggerSetup.setup_logging(log_file_path, log_level)
 
-try:
-    FileFolderChecks.ensure_folder_creation()
-    FileFolderChecks.create_missing_files()
-    FileFolderChecks.set_file_permission()
-    print(SnapcastGuiVariables.config_dir)
-    open(SnapcastGuiVariables.log_file_path, "w").close()
-except Exception as e:
-    print(f"Error creating log file: {e}")
-    Notifications.send_notify("Error", f"Error creating log file: {e}")
-    sys.exit(1)
-
-logging.basicConfig(
-    filename=SnapcastGuiVariables.log_file_path,
-    level=read_log_level(SnapcastGuiVariables.log_level_file_path),
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%H:%M:%S",
-)
-print(SnapcastGuiVariables.log_file_path)
-print(SnapcastGuiVariables.log_level_file_path)
+logger = LoggerSetup.get_logger("main")
 
 
 def main():
@@ -101,7 +87,7 @@ def main():
     if len(sys.argv) > 1:
         option = sys.argv[1].lower()
         if option == "-h" or option == "--help":
-            logging.debug("Showing help message")
+            logger.debug("Showing help message")
             print("Usage: python main.py")
             print("Options:")
             print("  -h / --help             Show this help message and exit")
@@ -111,22 +97,22 @@ def main():
             print("  -i / --ip               Open ip file")
             sys.exit(0)
         elif option == "-v" or option == "--version":
-            logging.debug("Showing version")
+            logger.debug("Showing version")
             print("Snapcast-Gui version: {}".format(SnapcastGuiVariables.snapcast_gui_version))
         elif option == "-c" or option == "--config":
             open_file(SnapcastGuiVariables.settings_file_path)
-            logging.debug("Opening settings file with open_file")
+            logger.debug("Opening settings file with open_file")
             sys.exit(0)
         elif option == "-l" or option == "--log":
             open_file(SnapcastGuiVariables.log_file_path)
-            logging.debug("Opening log file with open_file")
+            logger.debug("Opening log file with open_file")
             sys.exit(0)
         elif option == "-i" or option == "--ip":
             open_file(SnapcastGuiVariables.log_level_file_path)
-            logging.debug("Opening log level file with open_file")
+            logger.debug("Opening log level file with open_file")
             sys.exit(0)
         else:
-            logging.debug("Invalid argument")
+            logger.debug("Invalid argument")
             print("Invalid argument")
             print("")
             print("Usage: python main.py")
@@ -139,10 +125,8 @@ def main():
 
             sys.exit(1)
 
-    log_level = read_log_level(SnapcastGuiVariables.log_level_file_path)
-
-    logging.info("Starting Snapcast-Gui")
-    logging.debug("sys.platform: {}".format(sys.platform))
+    logger.info("Starting Snapcast-Gui")
+    logger.debug("sys.platform: {}".format(sys.platform))
 
     snapcast_settings = SnapcastSettings(log_level)
 
@@ -171,7 +155,6 @@ def main():
 
     combined_window.show()
     sys.exit(app.exec())
-
 
 if __name__ == "__main__":
     main()

@@ -23,17 +23,15 @@ class PathInputDialog(QDialog):
 
     def __init__(self, program_name: str, log_level: int):
         super().__init__()
-        logging.getLogger().setLevel(log_level)
-        logging.debug(
-            f"pathinputdialog: Initializing pathinputdialog for {program_name}"
-        )
+        self.logger = logging.getLogger("PathInputDialog")
+        self.logger.setLevel(log_level)
+        self.logger.debug(f"Initializing for {program_name}")
+
         self.setWindowTitle(f"Provide path for {program_name}")
 
         self.layout = QVBoxLayout(self)
 
-        self.label = QLabel(
-            f"Unable to find path for {program_name}. Please provide the path:"
-        )
+        self.label = QLabel(f"Unable to find path for {program_name}. Please provide the path:")
         self.layout.addWidget(self.label)
 
         self.path_edit = QLineEdit(self)
@@ -44,8 +42,7 @@ class PathInputDialog(QDialog):
         self.layout.addWidget(self.browse_button)
 
         self.button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self
-        )
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
         self.layout.addWidget(self.button_box)
@@ -59,7 +56,7 @@ class PathInputDialog(QDialog):
         If a path is selected, it sets the text of the path_edit field to the
         selected path.
         """
-        logging.debug("pathinputdialog: Browsing for path")
+        self.logger.debug("Browsing for path")
         path, _ = QFileDialog.getOpenFileName(self, "Select Program Path")
         if path:
             self.path_edit.setText(path)
@@ -71,5 +68,5 @@ class PathInputDialog(QDialog):
         Returns:
             str: The path entered by the user in the path_edit field.
         """
-        logging.debug(f"pathinputdialog: Returning path: {self.path_edit.text()}")
+        self.logger.debug(f"Returning path: {self.path_edit.text()}")
         return self.path_edit.text()

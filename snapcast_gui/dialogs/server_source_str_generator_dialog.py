@@ -22,8 +22,9 @@ class ServerSourceStrGeneratorDialog(QDialog):
 
     def __init__(self, parent=None, log_level=logging.DEBUG):
         super().__init__(parent)
-        logging.getLogger().setLevel(log_level)
-        logging.debug("Snapserver Source Dialog: Initialized.")
+        self.logger = logging.getLogger("ServerSourceStrGeneratorDialog")
+        self.logger.setLevel(log_level)
+        self.logger.debug("Initialized.")
 
         self.setWindowTitle("Snapserver Source Configuration")
         self.setMinimumSize(380, 600)
@@ -68,7 +69,7 @@ class ServerSourceStrGeneratorDialog(QDialog):
             self.input_fields_layout.itemAt(i).widget().deleteLater()
 
         input_type = self.type_dropdown.currentText()
-        logging.debug(f"Snapserver Source Dialog: Selected input type {input_type}.")
+        self.logger.debug(f"Selected input type {input_type}.")
 
         if input_type == "pipe":
             self.add_input_field("Path to Pipe", "path/to/pipe", "Required")
@@ -137,7 +138,7 @@ class ServerSourceStrGeneratorDialog(QDialog):
         line_edit.setToolTip(f"{label_text} - {requirement}")
         self.input_fields_layout.addWidget(label)
         self.input_fields_layout.addWidget(line_edit)
-        logging.debug(f"Snapserver Source Dialog: Added input field {label_text} ({requirement}).")
+        self.logger.debug(f"Added input field {label_text} ({requirement}).")
 
 
     def generate_input_string(self) -> None:
@@ -164,7 +165,7 @@ class ServerSourceStrGeneratorDialog(QDialog):
         for label, input_text in zip(labels, inputs):
             if label in required_fields[input_type] and not input_text:
                 QMessageBox.warning(self, "Input Error", f"{label} is required.")
-                logging.debug(f"Snapserver Source Dialog: Missing required field {label}.")
+                self.logger.debug(f"Missing required field {label}.")
                 return
 
         input_string = f"{input_type}://"
@@ -231,7 +232,7 @@ class ServerSourceStrGeneratorDialog(QDialog):
             if inputs[2]:
                 input_string += f"&codec={inputs[2]}"
 
-        logging.debug(f"Snapserver Source Dialog: Generated input string: {input_string}")
+        self.logger.debug(f"Generated input string: {input_string}")
         QMessageBox.information(self, "Input String", f"Generated Input String:\n{input_string}")
         
     def link_to_info_page_on_github(self) -> None:
@@ -266,5 +267,5 @@ class ServerSourceStrGeneratorDialog(QDialog):
         Args:
             url (str): The URL to open.
         """
-        logging.debug(f"Snapserver Source Dialog: Opening URL {url}.")
+        self.logger.debug(f"Opening URL {url}.")
         QDesktopServices.openUrl(QUrl(url))

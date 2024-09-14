@@ -29,7 +29,8 @@ class ClientWindow(QMainWindow):
         Initializes the clientwindow object.
         """
         super(ClientWindow, self).__init__()
-        logging.getLogger().setLevel(log_level)
+        self.logger = logging.getLogger("ClientWindow")
+        self.logger.setLevel(log_level)
 
         self.snapcast_settings = snapcast_settings
 
@@ -168,7 +169,7 @@ class ClientWindow(QMainWindow):
         """
         Populates the IP dropdown with the IP addresses from the config file.
         """
-        logging.debug("clientwindow: Populating IP dropdown")
+        self.logger.debug("Populating IP dropdown")
         self.ip_addresses = self.snapcast_settings.read_config_file()
         self.ip_dropdown.clear()
         self.ip_dropdown.addItems(self.ip_addresses)
@@ -181,7 +182,7 @@ class ClientWindow(QMainWindow):
         self.audio_engine = self.audio_engine_dropdown.currentText().lower()
         if self.audio_engine == "pulseaudio":
             self.audio_engine = "pulse"
-            logging.info("clientwindow: Audio engine set to PulseAudio")
+            self.logger.info("Audio engine set to PulseAudio")
             self.pcms_dropdown.clear()
             self.pcms_dropdown.setEnabled(True)
             self.pcms_refresh_button.setEnabled(True)
@@ -194,7 +195,7 @@ class ClientWindow(QMainWindow):
                 self.read_snapclient_output
             )
             self.snapclient_process.start()
-            logging.info("clientwindow: Snapclient process started to get PCMs")
+            self.logger.info("Snapclient process started to get PCMs")
             self.snapclient_process.waitForFinished()
         else:
             self.pcms_dropdown.clear()
@@ -205,10 +206,10 @@ class ClientWindow(QMainWindow):
         """
         Reads the output of the snapclient process to get the PCMs to populate the PCMs dropdown.
         """
-        logging.debug("clientwindow: Reading snapclient output")
+        self.logger.debug("Reading snapclient output")
         if self.snapclient_process is not None:
             output = self.snapclient_process.readAllStandardOutput().data().decode()
-            logging.debug(f"clientwindow: Snapclient output: {output}")
+            self.logger.error(f"Snapclient output: {output}")
             device_pattern = r":\s*(.+)$"
             device_names: List[str] = re.findall(device_pattern, output, re.MULTILINE)
 
@@ -216,7 +217,7 @@ class ClientWindow(QMainWindow):
             self.pcms_dropdown.clear()
             self.pcms_dropdown.addItem("Default")
             self.pcms_dropdown.addItems(device_names)
-            logging.debug(f"clientwindow: PCMs found: {device_names}")
+            self.logger.error(f"PCMs found: {device_names}")
             return device_names
         else:
             QMessageBox.warning(
@@ -233,10 +234,10 @@ class ClientWindow(QMainWindow):
         """
         if self.frequency_dropdown.currentText() == "Custom":
             self.frequency_dropdown.setEditable(True)
-            logging.debug("clientwindow: Frequency set to custom")
+            self.logger.debug("Frequency set to custom")
         else:
             self.frequency_dropdown.setEditable(False)
-            logging.debug("clientwindow: Frequency set to system")
+            self.logger.debug("Frequency set to system")
 
     def update_bitrate(self) -> None:
         """
@@ -245,11 +246,11 @@ class ClientWindow(QMainWindow):
         """
         if self.bitrate_dropdown.currentText() == "Custom":
             self.bitrate_dropdown.setEditable(True)
-            logging.debug("clientwindow: Bitrate set to custom")
+            self.logger.debug("Bitrate set to custom")
         else:
             self.bitrate_dropdown.setEditable(False)
-            logging.debug("clientwindow: Bitrate set to system")
-            logging.debug("clientwindow: Bitrate set to system")
+            self.logger.debug("Bitrate set to system")
+            self.logger.debug("Bitrate set to system")
 
     def update_channels(self) -> None:
         """
@@ -262,10 +263,10 @@ class ClientWindow(QMainWindow):
         """
         if self.channels_dropdown.currentText() == "Custom":
             self.channels_dropdown.setEditable(True)
-            logging.debug("clientwindow: Channels set to custom")
+            self.logger.debug("Channels set to custom")
         else:
             self.channels_dropdown.setEditable(False)
-            logging.debug("clientwindow: Channels set to system")
+            self.logger.debug("Channels set to system")
 
     def check_dropdown_selection(self) -> bool:
         """
@@ -288,7 +289,7 @@ class ClientWindow(QMainWindow):
         It also logs a debug message indicating the new buffer size.
         """
         self.buffer_size = self.buffer_size_dropdown.currentText()
-        logging.debug(f"clientwindow: Buffer size set to {self.buffer_size}")
+        self.logger.error(f"Buffer size set to {self.buffer_size}")
 
     def generate_snapclient_arguments(self) -> Union[List[str], None]:
         """
@@ -344,7 +345,7 @@ class ClientWindow(QMainWindow):
             and self.snapclient_process.state() == QProcess.Running
         ):
             QMessageBox.critical(self, "Error", "Snapclient process already running.")
-            logging.warning("clientwindow: Snapclient process already running.")
+            self.logger.warning("Snapclient process already running.")
             return
 
         def start_snapclient():
@@ -363,16 +364,16 @@ class ClientWindow(QMainWindow):
             self.log_area.clear()
             self.snapclient_process.setProcessChannelMode(QProcess.MergedChannels)
             self.snapclient_process.readyReadStandardOutput.connect(self.read_output)
-            logging.debug(
-                "clientwindow: Snapclient executable {}".format(
+            self.logger.debug(
+                "Snapclient executable {}".format(
                     self.snapcast_settings.read_setting("Snapclient/Custom_Path")
                 )
             )
-            logging.debug(
-                "clientwindow: Snapclient command: {}".format(" ".join(arguments))
+            self.logger.debug(
+                "Snapclient command: {}".format(" ".join(arguments))
             )
             self.snapclient_process.started.connect(
-                lambda: logging.info("clientwindow: Snapclient process started.")
+                lambda: self.logger.info("Snapclient process started.")
             )
             self.snapclient_process.start()
 
@@ -408,7 +409,7 @@ class ClientWindow(QMainWindow):
             self.connect_button.setText("Run Snapclient")
         else:
             QMessageBox.warning(self, "Warning", "Snapclient process is not running.")
-            logging.warning("clientwindow: Snapclient process is not running.")
+            self.logger.warning("Snapclient process is not running.")
             self.process_finished("")
 
     def cleanup_snapclient_thread(self) -> None:
@@ -450,7 +451,7 @@ class ClientWindow(QMainWindow):
             )
         )
         Notifications.send_notify(log, "Snapclient")
-        logging.info(f"clientwindow: {log}")
+        self.logger.info(f" Logs from snapclient process{log}")
 
     def disable_controls(self) -> None:
         """
@@ -459,7 +460,7 @@ class ClientWindow(QMainWindow):
         This method disables various controls in the window, such as dropdown menus and input fields,
         to prevent user interaction when certain conditions are met.
         """
-        logging.debug("clientwindow: Disabling controls")
+        self.logger.debug("Disabling controls")
         self.buffer_size_dropdown.setEnabled(False)
         self.bitrate_dropdown.setEnabled(False)
         self.channels_dropdown.setEnabled(False)
@@ -478,7 +479,7 @@ class ClientWindow(QMainWindow):
         This method enables various controls in the window, allowing the user to interact with them.
         Additionally, it sets the readOnly property of ip_input to False, allowing the user to edit its value.
         """
-        logging.debug("clientwindow: Enabling controls")
+        self.logger.debug("Enabling controls")
         self.buffer_size_dropdown.setEnabled(True)
         self.bitrate_dropdown.setEnabled(True)
         self.channels_dropdown.setEnabled(True)
@@ -497,8 +498,8 @@ class ClientWindow(QMainWindow):
         Args:
             state: The state of the toggle. 2 represents 'show', 0 represents 'hide'.
         """
-        logging.debug("clientwindow: Toggling advanced options")
-        logging.debug("clientwindow: State: {}".format(state))
+        self.logger.debug("Toggling advanced options")
+        self.logger.debug("State: {}".format(state))
         if state == 2:
             self.show_advanced_options()
         elif state == 0:
@@ -516,10 +517,10 @@ class ClientWindow(QMainWindow):
             and self.snapclient_process.state() == QProcess.Running
         ):
             self.stop_snapclient()
-            logging.debug("clientwindow: Stopping snapclient from toggle")
+            self.logger.debug("Stopping snapclient from toggle")
         else:
             self.run_snapclient()
-            logging.debug("clientwindow: Starting snapclient from toggle")
+            self.logger.debug("Starting snapclient from toggle")
 
     def hide_advanced_options(self) -> None:
         """
@@ -529,7 +530,7 @@ class ClientWindow(QMainWindow):
         the PCMs refresh button, the resample label, the frequency dropdown, the bitrate dropdown,
         and the channels dropdown.
         """
-        logging.debug("clientwindow: Hiding advanced options")
+        self.logger.debug("Hiding advanced options")
         self.pcms_label.hide()
         self.pcms_dropdown.hide()
         self.pcms_refresh_button.hide()
@@ -548,7 +549,7 @@ class ClientWindow(QMainWindow):
         Args:
             None
         """
-        logging.debug("clientwindow: Showing advanced options")
+        self.logger.debug("Showing advanced options")
         self.pcms_label.show()
         self.pcms_dropdown.show()
         self.pcms_refresh_button.show()
@@ -564,6 +565,6 @@ class ClientWindow(QMainWindow):
         This method reads the standard output of the snapclient process and decodes it as a string.
         The decoded output is then appended to the log area.
         """
-        logging.debug("clientwindow: Reading output")
+        self.logger.debug("Reading output")
         output = self.snapclient_process.readAllStandardOutput().data().decode()
         self.log_area.append(output)

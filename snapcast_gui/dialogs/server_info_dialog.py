@@ -16,9 +16,10 @@ class ServerInfoDialog(QDialog):
     """
     def __init__(self, server_data_json, log_level: int = logging.DEBUG) -> None:
         super().__init__()
-        logging.getLogger().setLevel(log_level)
+        self.logger = logging.getLogger("ServerInfoDialog")
+        self.logger.setLevel(log_level)
 
-        logging.debug("Server Info Dialog: Created Dialog Successfully")
+        self.logger.debug("Created Dialog Successfully")
 
         self.setWindowTitle("Server Information")
 
@@ -65,4 +66,4 @@ class ServerInfoDialog(QDialog):
         label = QLabel(f"{label_text}: {value}")
         label.setToolTip(f"{label_text}")
         self.layout.addWidget(label)
-        logging.debug(f"Server Info Dialog: Added label for {label_text} with value {value}")
+        self.logger.debug(f"Server Info Dialog: Added label for {label_text} with value {value}")
