@@ -70,6 +70,10 @@ def open_file(file_path: str) -> None:
     QDesktopServices.openUrl(url)
     app.exit()
     
+FileFolderChecks.ensure_folder_creation()
+FileFolderChecks.create_missing_files()
+FileFolderChecks.set_file_permission()
+
 log_level = read_log_level(SnapcastGuiVariables.log_level_file_path)
 log_file_path = SnapcastGuiVariables.log_file_path
 LoggerSetup.setup_logging(log_file_path, log_level)
