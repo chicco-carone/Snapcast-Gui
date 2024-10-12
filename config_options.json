@@ -1,0 +1,147 @@
+{
+    "server": {
+        "threads": {
+            "type": "text",
+            "description": "Number of additional worker threads to use.\n- For values < 0 the number of threads will be 2 (on single and dual cores)\n- 0 will utilize just the processes main thread.",
+            "default": "-1"
+        },
+        "pidfile": {
+            "type": "text",
+            "description": "The PID file when running as daemon.",
+            "default": "/var/run/snapserver/pid"
+        },
+        "user": {
+            "type": "text",
+            "description": "The user to run as when daemonized.",
+            "default": "snapserver"
+        },
+        "group": {
+            "type": "text",
+            "description": "The group to run as when daemonized.",
+            "default": "snapserver"
+        },
+        "datadir": {
+            "type": "text",
+            "description": "Directory where persistent data is stored.",
+            "default": "$HOME/.config/snapserver/"
+        }
+    },
+    "http": {
+        "enabled": {
+            "type": "checkbox",
+            "description": "Enable HTTP Json RPC.",
+            "default": true
+        },
+        "bind_to_address": {
+            "type": "text",
+            "description": "Address to listen on.",
+            "default": "0.0.0.0"
+        },
+        "port": {
+            "type": "text",
+            "description": "Which port the server should listen to.",
+            "default": "1780"
+        },
+        "doc_root": {
+            "type": "text",
+            "description": "Serve a website from the doc_root location.",
+            "default": "/usr/share/snapserver/snapweb"
+        },
+        "host": {
+            "type": "text",
+            "description": "Hostname or IP under which clients can reach this host.",
+            "default": "<hostname>"
+        }
+    },
+    "tcp": {
+        "enabled": {
+            "type": "checkbox",
+            "description": "Enable TCP Json RPC.",
+            "default": true
+        },
+        "bind_to_address": {
+            "type": "text",
+            "description": "Address to listen on.",
+            "default": "0.0.0.0"
+        },
+        "port": {
+            "type": "text",
+            "description": "Which port the server should listen to.",
+            "default": "1705"
+        }
+    },
+    "stream": {
+        "bind_to_address": {
+            "type": "text",
+            "description": "Address to listen on.",
+            "default": "0.0.0.0"
+        },
+        "port": {
+            "type": "text",
+            "description": "Which port the server should listen to.",
+            "default": "1704"
+        },
+        "source": {
+            "type": "text",
+            "description": "Source URI of the PCM input stream.",
+            "default": "pipe:///tmp/snapfifo?name=default"
+        },
+        "sampleformat": {
+            "type": "text",
+            "description": "Default sample format.",
+            "default": "48000:16:2"
+        },
+        "codec": {
+            "type": "dropdown",
+            "description": "Default transport codec.",
+            "options": [
+                "flac",
+                "ogg",
+                "opus",
+                "pcm"
+            ],
+            "default": "flac"
+        },
+        "chunk_ms": {
+            "type": "text",
+            "description": "Default source stream read chunk size [ms].",
+            "default": "20"
+        },
+        "buffer": {
+            "type": "text",
+            "description": "Buffer [ms].",
+            "default": "1000"
+        },
+        "send_to_muted": {
+            "type": "checkbox",
+            "description": "Send audio to muted clients.",
+            "default": false
+        }
+    },
+    "streaming_client": {
+        "initial_volume": {
+            "type": "text",
+            "description": "Volume assigned to new snapclients [percent].",
+            "default": "100"
+        }
+    },
+    "logging": {
+        "sink": {
+            "type": "dropdown",
+            "description": "Log sink.",
+            "options": [
+                "null",
+                "system",
+                "stdout",
+                "stderr",
+                "file:<filename>"
+            ],
+            "default": "stdout"
+        },
+        "filter": {
+            "type": "text",
+            "description": "Log filter.",
+            "default": "*:info"
+        }
+    }
+}
