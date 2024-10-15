@@ -20,6 +20,7 @@ from snapcast_gui.dialogs.server_source_str_generator_dialog import ServerSource
 from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
 from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
 from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
+from snapcast_gui.dialogs.snapserver_configuration_editor import SnapserverConfigurationEditor
 
 
 class CombinedWindow(QMainWindow):
@@ -80,13 +81,20 @@ class CombinedWindow(QMainWindow):
 
         self.source_generator_action = QAction("Source Generator", self)
         self.source_generator_action.triggered.connect(
-            lambda: self.show_source_generator_dialog())
+            lambda: ServerSourceStrGeneratorDialog().exec())
         self.source_generator_action.setToolTip(
             "Generate a Snapserver source configuration")
+        
+        self.snapserver_configuration_action = QAction("Snapserver Configuration", self)
+        self.snapserver_configuration_action.triggered.connect(
+            lambda: SnapserverConfigurationEditor().exec())
+        self.snapserver_configuration_action.setToolTip(
+            "Edit the Snapserver configuration")
 
         self.toolbar.addAction(self.settings_action)
         self.toolbar.addAction(self.server_action)
         self.toolbar.addAction(self.source_generator_action)
+        self.toolbar.addAction(self.snapserver_configuration_action)
 
         self.update_paths()
         self.load_selected_theme()
@@ -111,14 +119,6 @@ class CombinedWindow(QMainWindow):
             self.server_window.hide()
         else:
             self.server_window.show()
-
-    def show_source_generator_dialog(self) -> None:
-        """
-        Shows the source generator dialog.
-        """
-        source_generator_dialog = ServerSourceStrGeneratorDialog(self, self.log_level)
-        source_generator_dialog.exec()
-
 
     def find_program(self, program_name: str) -> str:
         if sys.platform in ["linux", "darwin"]:
