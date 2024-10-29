@@ -8,7 +8,9 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QVBoxLayout,
+    QCheckBox,
 )
+from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
 
 
 class PathInputDialog(QDialog):
@@ -41,6 +43,9 @@ class PathInputDialog(QDialog):
         self.browse_button.clicked.connect(self.browse_path)
         self.layout.addWidget(self.browse_button)
 
+        self.ignore_popup_checkbox = QCheckBox("Don't ask again", self)
+        self.layout.addWidget(self.ignore_popup_checkbox)
+
         self.button_box = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
         self.button_box.accepted.connect(self.accept)
@@ -70,3 +75,16 @@ class PathInputDialog(QDialog):
         """
         self.logger.debug(f"Returning path: {self.path_edit.text()}")
         return self.path_edit.text()
+
+    def accept(self) -> None:
+        """
+        Accepts the dialog and stores the user's preference for ignoring the popup.
+
+        This method is triggered when the OK button is clicked. It stores the user's
+        preference for ignoring the popup in the settings file using the SnapcastSettings
+        class and then accepts the dialog.
+        """
+        ignore_popup = self.ignore_popup_checkbox.isChecked()
+        SnapcastSettings().set_ignore_popup(ignore_popup)
+        self.logger.debug(f"Ignore popup preference set to: {ignore_popup}")
+        super().accept()
