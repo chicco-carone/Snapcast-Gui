@@ -5,6 +5,7 @@ import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QDialog
 
 from snapcast_gui.windows.combined_window import CombinedWindow
 from snapcast_gui.fileactions.file_folder_checks import FileFolderChecks
@@ -17,6 +18,7 @@ from snapcast_gui.windows.settings_window import SettingsWindow
 from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
 from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
 from snapcast_gui.misc.logger_setup import LoggerSetup
+from snapcast_gui.dialogs.path_input_dialog import PathInputDialog
 
 def read_log_level(log_level_file_path: str) -> int:
     """
@@ -156,6 +158,11 @@ def main():
         snapcast_settings,
         log_level,
     )
+
+    if not snapcast_settings.should_ignore_popup() or os.path.exists(snapcast_settings.read_setting("Snapclient/Custom_Path")) is False:
+        dialog = PathInputDialog("snapclient", log_level)
+        if dialog.exec() == QDialog.Accepted:
+            snapcast_settings.set_ignore_popup(dialog.ignore_popup_checkbox.isChecked())
 
     combined_window.show()
     sys.exit(app.exec())

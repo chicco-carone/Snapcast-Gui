@@ -11,7 +11,7 @@ class SnapcastSettings:
     A class that handles the settings for the Snapcast GUI application.
     """
 
-    def __init__(self, log_level: int) -> None:
+    def __init__(self, log_level: int = logging.DEBUG) -> None:
         """
         Initializes the snapcastsettings object.
 
@@ -34,6 +34,7 @@ class SnapcastSettings:
             "Snapclient/show_advanced_settings_on_startup": False,
             "Snapclient/enable_custom_path": False,
             "Snapclient/Custom_Path": "",
+            "Snapclient/Ignore_Popup": False,
             "Snapserver/autostart": False,
             "Snapserver/Config_Before_Start": "",
             "Snapserver/Config_After_Start": "",
@@ -173,3 +174,21 @@ class SnapcastSettings:
         self.logger.debug(
             "IP Address {} removed from config file.".format(ip)
         )
+
+    def should_ignore_popup(self) -> bool:
+        """
+        Reads the setting for ignoring the popup and returns its value.
+
+        Returns:
+            bool: True if the popup should be ignored, False otherwise.
+        """
+        return self.read_setting("Snapclient/Ignore_Popup")
+
+    def set_ignore_popup(self, value: bool) -> None:
+        """
+        Updates the setting for ignoring the popup.
+
+        Args:
+            value (bool): The new value for the setting.
+        """
+        self.update_setting("Snapclient/Ignore_Popup", str(value))
