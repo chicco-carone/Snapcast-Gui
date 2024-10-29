@@ -1,0 +1,76 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          if [ ${{ runner.os }} == 'Linux' ]; then
+            pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png:icons" --add-data "icons/Github.png:icons" main.py
+          elif [ ${{ runner.os }} == 'Windows' ]; then
+            pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png;icons" --add-data "icons/Github.png;icons" --uac-admin main.py
+          elif [ ${{ runner.os }} == 'macOS' ]; then
+            pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png:icons" --add-data "icons/Github.png:icons" main.py
+          fi
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: snapcast-gui-${{ runner.os }}
+          path: dist/snapcast-gui
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: snapcast-gui-${{ matrix.os }}
+          path: dist/
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/snapcast-gui
+          asset_name: snapcast-gui-${{ matrix.os }}
+          asset_content_type: application/octet-stream

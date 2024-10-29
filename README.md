@@ -288,4 +288,20 @@ Project Link: <https://github.com/chicco-carone/Snapcast-Gui>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-[product-screenshot]: images/screenshot.png
+## Using the GitHub Actions Workflow
+
+The project now includes a GitHub Actions workflow to build the project with pyinstaller for Linux, Windows, and Mac, and to create and publish a new release with prebuilt binaries.
+
+### Steps to Use the Workflow
+
+1. **Trigger the Workflow:**
+   - The workflow is triggered automatically on every push to the `main` branch and on every pull request to the `main` branch.
+
+2. **Build and Release:**
+   - The workflow builds the project with pyinstaller for Linux, Windows, and Mac.
+   - It then creates and publishes a new release with prebuilt binaries to the GitHub releases page.
+
+3. **Check the Release:**
+   - Go to the [releases](https://github.com/chicco-carone/Snapcast-Gui/releases) page to find the newly created release with prebuilt binaries for your platform.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
