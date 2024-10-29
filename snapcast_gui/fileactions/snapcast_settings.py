@@ -11,7 +11,7 @@ class SnapcastSettings:
     A class that handles the settings for the Snapcast GUI application.
     """
 
-    def __init__(self, log_level: int) -> None:
+    def __init__(self, log_level: int = logging.DEBUG) -> None:
         """
         Initializes the snapcastsettings object.
 
@@ -191,4 +191,4 @@ class SnapcastSettings:
         Args:
             value (bool): The new value for the setting.
         """
-        self.update_setting("Snapclient/Ignore_Popup", value)
+        self.update_setting("Snapclient/Ignore_Popup", str(value))

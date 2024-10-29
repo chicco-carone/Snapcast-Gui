@@ -159,7 +159,7 @@ def main():
         log_level,
     )
 
-    if not snapcast_settings.should_ignore_popup():
+    if not snapcast_settings.should_ignore_popup() or os.path.exists(snapcast_settings.read_setting("Snapclient/Custom_Path")) is False:
         dialog = PathInputDialog("snapclient", log_level)
         if dialog.exec() == QDialog.Accepted:
             snapcast_settings.set_ignore_popup(dialog.ignore_popup_checkbox.isChecked())
