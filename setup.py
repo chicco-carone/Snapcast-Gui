@@ -18,7 +18,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     entry_points={
         "gui_scripts": ["snapcast-gui = main:main"]
     },
