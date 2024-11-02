@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: 3.10
 
       - name: Install dependencies
         run: |
@@ -30,7 +30,7 @@ jobs:
           if [ ${{ runner.os }} == 'Linux' ]; then
             pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png:icons" --add-data "icons/Github.png:icons" main.py
           elif [ ${{ runner.os }} == 'Windows' ]; then
-            pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png;icons" --add-data "icons/Github.png;icons" --uac-admin main.py
+            pyinstaller.exe --onefile --name "snapcast-gui" --icon="icons/Snapcast.png" --add-data "icons/Snapcast.png;icons" --add-data "icons/Github.png;icons" --noconsole --uac-admin main.py
           elif [ ${{ runner.os }} == 'macOS' ]; then
             pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png:icons" --add-data "icons/Github.png:icons" main.py
           fi
