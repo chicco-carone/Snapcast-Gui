@@ -38,6 +38,7 @@ class SnapcastSettings:
             "Snapserver/autostart": False,
             "Snapserver/Config_Before_Start": "",
             "Snapserver/Config_After_Start": "",
+            "Snapserver/Ignore_Popup": True,
             "Shortcuts/Open_Settings": "Ctrl+O",
             "Shortcuts/Connect_Disconnect": "Ctrl+C",
             "Shortcuts/Toggle_Snapclient": "Ctrl+E",
@@ -174,21 +175,3 @@ class SnapcastSettings:
         self.logger.debug(
             "IP Address {} removed from config file.".format(ip)
         )
-
-    def should_ignore_popup(self) -> bool:
-        """
-        Reads the setting for ignoring the popup and returns its value.
-
-        Returns:
-            bool: True if the popup should be ignored, False otherwise.
-        """
-        return self.read_setting("Snapclient/Ignore_Popup")
-
-    def set_ignore_popup(self, value: bool) -> None:
-        """
-        Updates the setting for ignoring the popup.
-
-        Args:
-            value (bool): The new value for the setting.
-        """
-        self.update_setting("Snapclient/Ignore_Popup", str(value))

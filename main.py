@@ -159,10 +159,27 @@ def main():
         log_level,
     )
 
-    if not snapcast_settings.should_ignore_popup() or os.path.exists(snapcast_settings.read_setting("Snapclient/Custom_Path")) is False:
-        dialog = PathInputDialog("snapclient", log_level)
-        if dialog.exec() == QDialog.Accepted:
-            snapcast_settings.set_ignore_popup(dialog.ignore_popup_checkbox.isChecked())
+    def is_executable(file_path):
+        return os.path.isfile(file_path) and os.access(file_path, os.X_OK)
+
+    snapclient_path = snapcast_settings.read_setting("Snapclient/Custom_Path")
+    snapserver_path = snapcast_settings.read_setting("Snapserver/Custom_Path")
+
+    if not snapcast_settings.read_setting("Snapclient/Ignore_Popup"):
+        if not is_executable(snapclient_path):
+            dialog = PathInputDialog("snapclient", log_level)
+            if dialog.exec() == QDialog.Accepted:
+                snapcast_settings.set_ignore_popup(dialog.ignore_popup_checkbox.isChecked())
+                new_path = dialog.get_path()
+                snapcast_settings.write_setting("Snapclient/Custom_Path", new_path)
+
+    if not snapcast_settings.read_setting("Snapserver/Ignore_Popup"):
+        if not is_executable(snapserver_path):
+            dialog = PathInputDialog("snapserver", log_level)
+            if dialog.exec() == QDialog.Accepted:
+                snapcast_settings.set_ignore_popup(dialog.ignore_popup_checkbox.isChecked())
+                new_path = dialog.get_path()
+                snapcast_settings.write_setting("Snapserver/Custom_Path", new_path)
 
     combined_window.show()
     sys.exit(app.exec())
