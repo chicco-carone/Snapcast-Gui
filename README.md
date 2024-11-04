@@ -99,7 +99,7 @@ Python Minimum Version >=3.9 only tested on 3.11 and 3.12
 The package is available on the aur so it can be installed with an aur helper like yay or manually
 
 ```sh
-yay -Sy snapcast-gui-git (Note: the package is not in the aur yet so it will not work)
+yay -Sy snapcast-gui-git
 ```
 
 ```sh
