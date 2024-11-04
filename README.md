@@ -196,7 +196,7 @@ pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png:icons
 For Windows
 
 ```powershell
-pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png;icons" --add-data "icons/Github.png;icons" --uac-admin main.py
+pyinstaller --onefile --name "snapcast-gui" --icon "icons/Snapcast.png" --add-data "icons/Snapcast.png;icons" --add-data "icons/Github.png;icons" --uac-admin --noconsole main.py
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
