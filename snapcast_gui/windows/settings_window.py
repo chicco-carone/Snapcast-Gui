@@ -181,13 +181,13 @@ class SettingsWindow(QMainWindow):
         self.theme_combo = QComboBox()
         self.populate_theme_dropdown()
         self.theme_combo.currentIndexChanged.connect(self.change_theme)
-        current_theme = self.snapcast_settings.read_setting("Themes/Current_Theme")
+        current_theme = self.snapcast_settings.read_setting("themes/current_theme")
         index = self.theme_combo.findText(current_theme)
         if index >= 0:
             self.theme_combo.setCurrentIndex(index)
         self.theme_combo.currentIndexChanged.connect(
             lambda: self.snapcast_settings.update_setting(
-                "Themes/Current_Theme", self.theme_combo.currentText()
+                "themes/current_theme", self.theme_combo.currentText()
             )
         )
         self.theme_combo.setObjectName("theme_combo")
@@ -221,10 +221,10 @@ class SettingsWindow(QMainWindow):
         """
         self.logger.info("Setting up snapclient settings")
         autostart_snapclient = self.snapcast_settings.read_setting(
-            "Snapclient/autostart"
+            "snapclient/autostart"
         )
         show_advanced_settings = self.snapcast_settings.read_setting(
-            "Snapclient/show_advanced_settings_on_startup"
+            "snapclient/show_advanced_settings_on_startup"
         )
         snapclient_label = QLabel("Snapclient Settings")
         snapclient_label.setAlignment(Qt.AlignCenter)
@@ -239,7 +239,7 @@ class SettingsWindow(QMainWindow):
         self.settings_layout.addWidget(self.autostart_snapclient_checkbox)
         self.autostart_snapclient_checkbox.stateChanged.connect(
             lambda: self.snapcast_settings.update_setting(
-                "Snapclient/autostart", self.autostart_snapclient_checkbox.isChecked()
+                "snapclient/autostart", self.autostart_snapclient_checkbox.isChecked()
             )
         )
         # self.autostart_snapclient_checkbox.stateChanged.connect(lambda: self.setup_snapclient_autostart_settings(self.autostart_snapclient_checkbox.isChecked()))
@@ -255,7 +255,7 @@ class SettingsWindow(QMainWindow):
         self.settings_layout.addWidget(self.show_advanced_settings_checkbox)
         self.show_advanced_settings_checkbox.stateChanged.connect(
             lambda: self.snapcast_settings.update_setting(
-                "Snapclient/Show_Advanced_Settings_on_startup",
+                "snapclient/show_advanced_settings_on_startup",
                 self.show_advanced_settings_checkbox.isChecked(),
             )
         )
@@ -269,7 +269,7 @@ class SettingsWindow(QMainWindow):
         self.custom_snapclient_path_checkbox = QCheckBox("Enable Custom Path")
         self.custom_snapclient_path_checkbox.stateChanged.connect(
             lambda: self.snapcast_settings.update_setting(
-                "Snapclient/Enable_Custom_Path", self.custom_snapclient_path_checkbox.isChecked()
+                "snapclient/enable_custom_path", self.custom_snapclient_path_checkbox.isChecked()
             )
         )
         self.custom_snapclient_path_checkbox.stateChanged.connect(
@@ -283,7 +283,7 @@ class SettingsWindow(QMainWindow):
         self.custom_snapclient_path_text = QTextEdit()
         self.custom_snapclient_path_text.setPlaceholderText("Custom Path")
         self.custom_snapclient_path_text.setText(
-            self.snapcast_settings.read_setting("Snapclient/Custom_Path")
+            self.snapcast_settings.read_setting("snapclient/custom_path")
         )
         self.custom_snapclient_path_text.setFixedHeight(35)
         self.custom_snapclient_path_text.setToolTip(
@@ -294,7 +294,7 @@ class SettingsWindow(QMainWindow):
         )
         self.custom_snapclient_path_text.setObjectName("custom_snapclient_path_text")
         self.settings_layout.addWidget(self.custom_snapclient_path_text, alignment=Qt.AlignTop)
-        if self.snapcast_settings.read_setting("Snapclient/Enable_Custom_Path"):
+        if self.snapcast_settings.read_setting("snapclient/enable_custom_path"):
             self.custom_snapclient_path_text.setEnabled(True)
         else:
             self.custom_snapclient_path_text.setEnabled(False)
@@ -372,7 +372,7 @@ class SettingsWindow(QMainWindow):
 
         autostart_snapserver = QCheckBox("Automatic Start Snapserver")
         autostart_snapserver.setChecked(
-            self.snapcast_settings.read_setting("Snapserver/autostart")
+            self.snapcast_settings.read_setting("snapserver/autostart")
         )
         autostart_snapserver.setObjectName("autostart_snapserver")
         self.settings_layout.addWidget(autostart_snapserver)
@@ -388,7 +388,7 @@ class SettingsWindow(QMainWindow):
         custom_snapserver_path_text = QTextEdit()
         custom_snapserver_path_text.setPlaceholderText("Custom Path")
         custom_snapserver_path_text.setText(
-            self.snapcast_settings.read_setting("Snapclient/Custom_Path")
+            self.snapcast_settings.read_setting("snapserver/custom_path")
         )
         custom_snapserver_path_text.setFixedHeight(35)
         custom_snapserver_path_text.setToolTip(
@@ -399,7 +399,7 @@ class SettingsWindow(QMainWindow):
         )
         custom_snapserver_path_text.setObjectName("custom_path_text")
         self.settings_layout.addWidget(custom_snapserver_path_text, alignment=Qt.AlignTop)
-        if self.snapcast_settings.read_setting("Snapserver/Enable_Custom_Path"):
+        if self.snapcast_settings.read_setting("snapserver/enable_custom_path"):
             custom_snapserver_path_text.setEnabled(True)
         else:
             custom_snapserver_path_text.setEnabled(False)
@@ -468,7 +468,7 @@ class SettingsWindow(QMainWindow):
         label.setObjectName("{}_label".format(action_name))
         shortcut_edit = QKeySequenceEdit()
         shortcut_edit.setKeySequence(
-            self.snapcast_settings.read_setting("Shortcuts/" + shortcut_config_name)
+            self.snapcast_settings.read_setting("shortcuts/" + shortcut_config_name)
         )
         shortcut_edit.setObjectName("{}_shortcut_edit".format(action_name))
         clear_shortcut_button = QPushButton()
@@ -498,7 +498,7 @@ class SettingsWindow(QMainWindow):
             layout = self.shortcut_layout.itemAt(i)
             key = layout.itemAt(0).widget().text().replace(" ", "_")
             value = layout.itemAt(1).widget().keySequence().toString()
-            self.snapcast_settings.update_setting("Shortcuts/{}".format(key), value)
+            self.snapcast_settings.update_setting("shortcuts/{}".format(key), value)
         self.logger.debug("Shortcuts saved successfully.")
 
     def setup_log_settings(self):
@@ -704,10 +704,10 @@ class SettingsWindow(QMainWindow):
             A tuple containing the snapclient version and snapserver version.
         """
         snapclient_version = subprocess.run(
-            [self.snapcast_settings.read_setting("Snapclient/Custom_Path"), "--version"], capture_output=True, text=True
+            [self.snapcast_settings.read_setting("snapclient/custom_path"), "--version"], capture_output=True, text=True
         ).stdout.split()[1]
         snapserver_version = subprocess.run(
-            [self.snapcast_settings.read_setting("Snapserver/Custom_Path"), "--version"], capture_output=True, text=True
+            [self.snapcast_settings.read_setting("snapserver/custom_path"), "--version"], capture_output=True, text=True
         ).stdout.split()[1]
         self.logger.debug(f"Snapclient version: {snapclient_version}")
         self.logger.debug(f"Snapserver version: {snapserver_version}")

@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
 
         self.server = None
 
-        if snapcast_settings.read_setting("General/AutoConnect"):
+        if snapcast_settings.read_setting("general/auto_connect"):
             self.create_server()
 
     def add_ip(self) -> None:
