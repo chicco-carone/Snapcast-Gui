@@ -116,49 +116,27 @@ class SettingsWindow(QMainWindow):
         """
         Clears the settings layout to prepare for the new one.
 
-        This method removes all widgets from the settings layout and any additional layouts (such as shortcut layout
-        and horizontal log layout) that may exist.
-
-        Note:
-            - The `settings_layout` is assumed to be a layout object that contains the settings widgets.
-            - The `shortcut_layout` and `horizontal_log_layout` are optional layouts that may exist within the`settings_layout`.
+        This method removes all widgets and layouts from the settings layout.
         """
         self.logger.debug("Clearing settings layout")
-        for i in reversed(range(self.settings_layout.count())):
-            widget = self.settings_layout.itemAt(i).widget()
-            if widget:
-                self.logger.debug(f"Removing widget: {widget}")
-                self.settings_layout.removeWidget(widget)
-                widget.setParent(None)
-                widget.deleteLater()
 
-        if hasattr(self, "shortcut_layout") and self.shortcut_layout:
-            self.logger.debug("Shortcut layout exists, removing...")
-            while self.shortcut_layout.count():
-                item = self.shortcut_layout.takeAt(0)
+        def clear_layout(layout):
+            while layout.count():
+                item = layout.takeAt(0)
                 widget = item.widget()
                 if widget:
-                    self.logger.debug(f"Removing shortcut widget: {widget}")
+                    self.logger.debug(f"Removing widget: {widget}")
                     widget.setParent(None)
                     widget.deleteLater()
-            self.logger.debug("Removing shortcut layout from main layout")
-            self.settings_layout.removeItem(self.shortcut_layout)
-            self.shortcut_layout = None
+                elif item.layout():
+                    self.logger.debug("Clearing nested layout")
+                    clear_layout(item.layout())
+            layout.deleteLater()
 
-        if hasattr(self, "horizontal_log_layout") and self.horizontal_log_layout:
-            self.logger.debug("Horizontal log layout exists, removing...")
-            while self.horizontal_log_layout.count():
-                item = self.horizontal_log_layout.takeAt(0)
-                widget = item.widget()
-                if widget:
-                    self.logger.debug(f"Removing horizontal log widget: {widget}")
-                    widget.setParent(None)
-                    widget.deleteLater()
-            self.logger.debug("Removing horizontal log layout from main layout")
-            self.settings_layout.removeItem(self.horizontal_log_layout)
-            self.horizontal_log_layout = None
-
-        self.settings_layout.update()
+        clear_layout(self.settings_layout)
+        self.settings_layout = QVBoxLayout()
+        self.settings_layout.setAlignment(Qt.AlignTop)
+        self.centralWidget().layout().addLayout(self.settings_layout, 2)
 
     def setup_theme_settings(self):
         """
@@ -414,10 +392,9 @@ class SettingsWindow(QMainWindow):
 
     def setup_shortcut_settings(self):
         """
-        Sets up the shortcut settings in the settingswindow.
+        Sets up the shortcut settings in the settings window.
 
-        This method creates and configures the shortcut settings layout, including
-        the shortcut labels, shortcut layout, and save shortcuts button.
+        This method creates and configures the shortcut settings layout and its widgets.
         """
         self.logger.info("Setting up shortcut settings")
         shortcut_label = QLabel("Shortcut Settings")
@@ -428,8 +405,7 @@ class SettingsWindow(QMainWindow):
         self.shortcut_layout = QVBoxLayout()
         self.shortcut_layout.setAlignment(Qt.AlignTop)
         self.settings_layout.addLayout(self.shortcut_layout)
-        self.shortcut_layout.setObjectName("shortcut_layout")
-        self.shortcuts = {}
+        self.shortcuts = []
 
         self.create_shortcut("Open Settings", "Open_Settings")
         self.create_shortcut("Connect Disconnect", "Connect_Disconnect")
@@ -451,6 +427,7 @@ class SettingsWindow(QMainWindow):
 
         apply_shortcuts_button = QPushButton("Apply Shortcuts")
         apply_shortcuts_button.clicked.connect(self.main_window.tray_icon.load_shortcuts)
+        self.settings_layout.addWidget(apply_shortcuts_button)
 
     def create_shortcut(self, action_name, shortcut_config_name):
         """
