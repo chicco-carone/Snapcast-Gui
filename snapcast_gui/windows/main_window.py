@@ -274,17 +274,37 @@ class MainWindow(QMainWindow):
 
     def create_volume_sliders(self) -> None:
         """
-        Creates the volume sliders, info button, mute button, and the client name text box for each client connected to the server.
+        Creates volume sliders for each client in the server.
+
+        This method initializes and configures the volume sliders for each client
+        connected to the server. It first clears any existing sliders from the layout,
+        then iterates through the clients to create and add new sliders.
+
+        The sliders allow users to adjust the volume for each client. Additionally,
+        it creates buttons for muting/unmuting clients, displaying client information,
+        and deleting offline clients.
+
+        The method handles both connected and offline clients, displaying appropriate
+        icons and enabling/disabling controls based on the client's connection status.
+            None
         """
         self.logger.debug("Creating volume sliders.")
         if self.server is None:
             return
         self.slider_widgets: List[QLayout] = []
 
-        for i in reversed(range(self.slider_layout.count())):
-            widget = self.slider_layout.itemAt(i).widget()
-            if widget:
-                widget.deleteLater()
+        def clear_layout(layout):
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+                else:
+                    sub_layout = item.layout()
+                    if sub_layout:
+                        clear_layout(sub_layout)
+
+        clear_layout(self.slider_layout)
 
         for client in self.server.clients:
             if self.show_offline_clients_button.isChecked() or client.connected:
