@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QSlider,
     QTextEdit,
     QVBoxLayout,
@@ -117,8 +118,12 @@ class MainWindow(QMainWindow):
 
         self.layout.addWidget(self.show_offline_clients_button)
 
-        self.slider_layout = QVBoxLayout()
-        self.layout.addLayout(self.slider_layout)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_widget = QWidget()
+        self.slider_layout = QVBoxLayout(self.scroll_widget)
+        self.scroll_area.setWidget(self.scroll_widget)
+        self.layout.addWidget(self.scroll_area)
 
         self.layout.setAlignment(Qt.AlignTop)
 
@@ -383,6 +388,7 @@ class MainWindow(QMainWindow):
                 self.slider_layout.addLayout(client_layout)
                 self.slider_widgets.append(client_layout)
                 self.slider_layout.setAlignment(Qt.AlignTop)
+        self.scroll_area.setMinimumHeight(300)
 
     def set_slider_value(self, client_id: str, value: int):
         """
