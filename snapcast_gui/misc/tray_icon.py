@@ -155,7 +155,7 @@ class TrayIcon(QSystemTrayIcon):
         self.logger.debug("Loading shortcuts")
         self.settings_shortcut = QShortcut(
             QKeySequence(
-                self.snapcast_settings.read_setting("Shortcuts/Open_Settings")
+                self.snapcast_settings.read_setting("shortcuts/open_settings")
             ),
             self.combined_window,
         )
@@ -167,7 +167,7 @@ class TrayIcon(QSystemTrayIcon):
         )
         self.snapserver_shortcut = QShortcut(
             QKeySequence(
-                self.snapcast_settings.read_setting("Shortcuts/Toggle_Snapserver")
+                self.snapcast_settings.read_setting("shortcuts/toggle_snapserver")
             ),
             self.combined_window,
         )
@@ -179,7 +179,7 @@ class TrayIcon(QSystemTrayIcon):
         )
         self.snapclient_shortcut = QShortcut(
             QKeySequence(
-                self.snapcast_settings.read_setting("Shortcuts/Toggle_Snapclient")
+                self.snapcast_settings.read_setting("shortcuts/toggle_snapclient")
             ),
             self.combined_window,
         )
@@ -188,7 +188,7 @@ class TrayIcon(QSystemTrayIcon):
             lambda: self.logger.debug("Toggle Snapclient shortcut activated")
         )
         self.quit_shortcut = QShortcut(
-            QKeySequence(self.snapcast_settings.read_setting("Shortcuts/Quit")),
+            QKeySequence(self.snapcast_settings.read_setting("shortcuts/quit")),
             self.combined_window,
         )
         self.quit_shortcut.activated.connect(QApplication.quit)
@@ -196,7 +196,7 @@ class TrayIcon(QSystemTrayIcon):
             lambda: self.logger.debug("Quit shortcut activated")
         )
         self.hide_shortcut = QShortcut(
-            QKeySequence(self.snapcast_settings.read_setting("Shortcuts/Hide")),
+            QKeySequence(self.snapcast_settings.read_setting("shortcuts/hide")),
             self.combined_window,
         )
         self.hide_shortcut.activated.connect(self.combined_window.hide)

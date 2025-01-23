@@ -152,11 +152,11 @@ class ClientWindow(QMainWindow):
 
         self.snapclient_thread = QThread()
 
-        if self.snapcast_settings.read_setting("Snapclient/autostart"):
+        if self.snapcast_settings.read_setting("snapclient/autostart"):
             self.run_snapclient()
 
         if self.snapcast_settings.read_setting(
-            "Snapclient/show_advanced_settings_on_startup"
+            "snapclient/show_advanced_settings_on_startup"
         ):
             self.show_advanced_options()
             self.show_advanced_checkbox.setChecked(True)
@@ -299,10 +299,10 @@ class ClientWindow(QMainWindow):
             list: A list of arguments for the snapclient process.
                     Returns None if any required values are not selected.
         """
-        arguments = [
-            "-h",
-            self.ip_input.text(),
-        ]
+        arguments = []
+        if self.ip_input.text() != "":
+            arguments.append("-h")
+            arguments.append(self.ip_input.text())
         if sys.platform == "linux":
             arguments.append("--player")
             arguments.append(f"{self.audio_engine}:buffer_time:{self.buffer_size}")
@@ -358,7 +358,7 @@ class ClientWindow(QMainWindow):
                 return
             self.snapclient_process = QProcess()
             self.snapclient_process.setProgram(
-                self.snapcast_settings.read_setting("Snapclient/Custom_Path")
+                self.snapcast_settings.read_setting("snapclient/custom_path")
             )
             self.snapclient_process.setArguments(arguments)
             self.log_area.clear()
@@ -366,7 +366,7 @@ class ClientWindow(QMainWindow):
             self.snapclient_process.readyReadStandardOutput.connect(self.read_output)
             self.logger.debug(
                 "Snapclient executable {}".format(
-                    self.snapcast_settings.read_setting("Snapclient/Custom_Path")
+                    self.snapcast_settings.read_setting("snapclient/custom_path")
                 )
             )
             self.logger.debug(
@@ -447,7 +447,7 @@ class ClientWindow(QMainWindow):
         self.connect_button.clicked.connect(self.run_snapclient)
         self.connect_button.setToolTip(
             "Start the Snapclient process using executable {}".format(
-                self.snapcast_settings.read_setting("Snapclient/Custom_Path")
+                self.snapcast_settings.read_setting("snapclient/custom_path")
             )
         )
         Notifications.send_notify(log, "Snapclient")

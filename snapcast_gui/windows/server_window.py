@@ -59,11 +59,11 @@ class ServerWindow(QMainWindow):
         )
         
         self.before_command.setText(
-            snapcast_settings.read_setting("Snapserver/Config_Before_Start") or ""
+            snapcast_settings.read_setting("snapserver/config_before_start") or ""
         )
         self.before_command.setFixedHeight(30)
         if (
-            len(snapcast_settings.read_setting("Snapserver/Config_Before_Start") or "")
+            len(snapcast_settings.read_setting("snapserver/config_before_start") or "")
             < 30
         ):
             self.before_command.setFixedHeight(30)
@@ -71,7 +71,7 @@ class ServerWindow(QMainWindow):
             self.before_command.setFixedHeight(60)
         self.before_command.textChanged.connect(
             lambda: self.snapcast_settings.update_setting(
-                "Snapserver/Config_Before_Start", self.before_command.toPlainText()
+                "snapserver/config_before_start", self.before_command.toPlainText()
             )
         )
         layout.addWidget(self.before_command)
@@ -81,16 +81,16 @@ class ServerWindow(QMainWindow):
             "Command to run after stopping the snapserver"
         )
         self.after_command.setText(
-            snapcast_settings.read_setting("Snapserver/Config_After_Start") or ""
+            snapcast_settings.read_setting("snapserver/config_after_start") or ""
         )
         self.after_command.setFixedHeight(30)
-        if (len(self.snapcast_settings.read_setting("Snapserver/Config_After_Start") or "") < 30):
+        if (len(self.snapcast_settings.read_setting("snapserver/config_after_start") or "") < 30):
             self.after_command.setFixedHeight(30)
         else:
             self.after_command.setFixedHeight(60)
         self.after_command.textChanged.connect(
             lambda: self.snapcast_settings.update_setting(
-                "Snapserver/Config_After_Start", self.after_command.toPlainText()
+                "snapserver/config_after_start", self.after_command.toPlainText()
             )
         )
         layout.addWidget(self.after_command)
@@ -117,7 +117,7 @@ class ServerWindow(QMainWindow):
 
         self.snapserver_thread = QThread()
 
-        if self.snapcast_settings.read_setting("Snapserver/autostart"):
+        if self.snapcast_settings.read_setting("snapserver/autostart"):
             self.run_snapserver()
             self.show()
 
@@ -140,7 +140,7 @@ class ServerWindow(QMainWindow):
         def start_snapserver():
             self.snapserver_process = QProcess()
             self.snapserver_process.setProgram(
-                self.snapcast_settings.read_setting("Snapserver/Custom_Path")
+                self.snapcast_settings.read_setting("snapserver/custom_path")
             )
             self.log_area.clear()
             self.snapserver_process.setProcessChannelMode(QProcess.MergedChannels)
@@ -149,7 +149,7 @@ class ServerWindow(QMainWindow):
             self.before_command.setReadOnly(True)
             self.after_command.setReadOnly(True)
             self.logger.debug("Snapserver executable {}".format(
-                self.snapcast_settings.read_setting("Snapserver/Custom_Path")
+                self.snapcast_settings.read_setting("snapserver/custom_path")
             ))
             self.logger.debug(
                 "Snapserver command: {}".format(

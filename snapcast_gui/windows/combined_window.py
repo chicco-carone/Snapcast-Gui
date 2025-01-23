@@ -1,7 +1,6 @@
 import logging
 import os
 import sys
-import time
 
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
@@ -19,7 +18,6 @@ from snapcast_gui.dialogs.path_input_dialog import PathInputDialog
 from snapcast_gui.dialogs.server_source_str_generator_dialog import ServerSourceStrGeneratorDialog
 from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
 from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
-from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
 
 
 class CombinedWindow(QMainWindow):
@@ -153,49 +151,39 @@ class CombinedWindow(QMainWindow):
         """
         try:
             if sys.platform == "linux":
-                snapclient_path = self.find_program("snapclient")
-                snapserver_path = self.find_program("snapserver")
-
-                if not self.snapcast_settings.read_setting(
-                    "Snapclient/enable_custom_path"
-                ):
+                if not self.snapcast_settings.read_setting("snapclient/enable_custom_path"):
+                    snapclient_path = self.find_program("snapclient")
                     self.snapcast_settings.update_setting(
-                        "Snapclient/Custom_Path", snapclient_path
+                        "snapclient/custom_path", snapclient_path
                     )
-                if not self.snapcast_settings.read_setting(
-                    "Snapserver/enable_custom_path"
-                ):
+                
+                if not self.snapcast_settings.read_setting("snapserver/enable_custom_path"):
+                    snapserver_path = self.find_program("snapserver")
                     self.snapcast_settings.update_setting(
-                        "Snapserver/Custom_Path", snapserver_path
+                        "snapserver/custom_path", snapserver_path
                     )
                 else:
                     custom_snapserver_path = self.snapcast_settings.read_setting(
-                        "Snapserver/Custom_Path"
+                        "snapserver/custom_path"
                     )
                     if not os.path.exists(custom_snapserver_path):
                         snapserver_path = self.find_program("snapserver")
                         self.snapcast_settings.update_setting(
-                            "Snapserver/Custom_Path", snapserver_path
+                            "snapserver/custom_path", snapserver_path
                         )
 
             elif sys.platform == "win32":
-                snapclient_path = self.find_program("snapclient.exe")
-
-                if not self.snapcast_settings.read_setting(
-                    "Snapclient/enable_custom_path"
-                ):
+                if not self.snapcast_settings.read_setting("snapclient/enable_custom_path"):
+                    snapclient_path = self.find_program("snapclient.exe")
                     self.snapcast_settings.update_setting(
-                        "Snapclient/Custom_Path", snapclient_path
+                        "snapclient/custom_path", snapclient_path
                     )
 
             elif sys.platform == "darwin":
-                snapclient_path = self.find_program("snapclient")
-
-                if not self.snapcast_settings.read_setting(
-                    "Snapclient/enable_custom_path"
-                ):
+                if not self.snapcast_settings.read_setting("snapclient/enable_custom_path"):
+                    snapclient_path = self.find_program("snapclient")
                     self.snapcast_settings.update_setting(
-                        "Snapclient/Custom_Path", snapclient_path
+                        "snapclient/custom_path", snapclient_path
                     )
 
         except Exception as e:
@@ -207,7 +195,7 @@ class CombinedWindow(QMainWindow):
         """
         self.logger.debug("Loading selected theme")
         try:
-            theme = self.snapcast_settings.read_setting("Themes/Current_Theme")
+            theme = self.snapcast_settings.read_setting("themes/current_theme")
             self.logger.debug(f"Theme: {theme}")
             if theme:
                 available_styles = QStyleFactory.keys()
@@ -224,17 +212,17 @@ class CombinedWindow(QMainWindow):
                     if QMessageBox.Yes:
                         self.logger.debug("Using default theme")
                         theme = self.find_default_theme()
-                        self.snapcast_settings.update_setting("Themes/Current_Theme", theme)
+                        self.snapcast_settings.update_setting("themes/current_theme", theme)
                         self.logger.debug(f"Selected theme: {theme}")
                     else:
                         self.logger.debug("No matching theme found")
                         theme = QApplication.style().objectName()
-                        self.snapcast_settings.update_setting("Themes/Current_Theme", theme)
+                        self.snapcast_settings.update_setting("themes/current_theme", theme)
                         self.logger.debug(f"Default theme: {theme}")
             else:
                 self.logger.debug("No theme selected")
                 theme = self.find_default_theme()
-                self.snapcast_settings.update_setting("Themes/Current_Theme", theme)
+                self.snapcast_settings.update_setting("themes/current_theme", theme)
                 self.logger.debug(f"Default theme: {theme}")
         except Exception as e:
             self.logger.error(f"Error loading theme {theme}: {e}")

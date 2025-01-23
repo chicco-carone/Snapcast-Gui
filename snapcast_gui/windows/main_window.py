@@ -31,9 +31,7 @@ from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
 from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
 from snapcast_gui.windows.client_window import ClientWindow
 from snapcast_gui.dialogs.client_info_dialog import ClientInfoDialog
-from snapcast_gui.dialogs.group_info_dialog import GroupInfoDialog
 from snapcast_gui.dialogs.server_info_dialog import ServerInfoDialog
-from snapcast_gui.misc.logger_setup import LoggerSetup
 
 from typing import Dict, Optional, Any, List
 
@@ -126,7 +124,7 @@ class MainWindow(QMainWindow):
 
         self.server = None
 
-        if snapcast_settings.read_setting("General/AutoConnect"):
+        if snapcast_settings.read_setting("general/autoconnect"):
             self.create_server()
 
     def add_ip(self) -> None:
@@ -274,22 +272,43 @@ class MainWindow(QMainWindow):
 
     def create_volume_sliders(self) -> None:
         """
-        Creates the volume sliders, info button, mute button, and the client name text box for each client connected to the server.
+        Creates volume sliders for each client in the server.
+
+        This method initializes and configures the volume sliders for each client
+        connected to the server. It first clears any existing sliders from the layout,
+        then iterates through the clients to create and add new sliders.
+
+        The sliders allow users to adjust the volume for each client. Additionally,
+        it creates buttons for muting/unmuting clients, displaying client information,
+        and deleting offline clients.
+
+        The method handles both connected and offline clients, displaying appropriate
+        icons and enabling/disabling controls based on the client's connection status.
+            None
         """
         self.logger.debug("Creating volume sliders.")
         if self.server is None:
             return
         self.slider_widgets: List[QLayout] = []
 
-        for i in reversed(range(self.slider_layout.count())):
-            widget = self.slider_layout.itemAt(i).widget()
-            if widget:
-                widget.deleteLater()
+        def clear_layout(layout):
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+                else:
+                    sub_layout = item.layout()
+                    if sub_layout:
+                        clear_layout(sub_layout)
+
+        clear_layout(self.slider_layout)
 
         for client in self.server.clients:
             if self.show_offline_clients_button.isChecked() or client.connected:
                 self.logger.debug(
-                    f"Creating volume slider for {client.identifier}. {client.friendly_name}."
+                    f"Creating volume slider for {
+                        client.identifier}. {client.friendly_name}."
                 )
                 client_layout = QHBoxLayout()
 
@@ -297,7 +316,8 @@ class MainWindow(QMainWindow):
                 client_label.setText(client.friendly_name)
                 client_label.setFixedSize(100, 30)
                 client_label.textChanged.connect(
-                    partial(self.change_client_name, client.identifier, client_label)
+                    partial(self.change_client_name,
+                            client.identifier, client_label)
                 )
 
                 speaker_icon = QIcon()
@@ -313,7 +333,8 @@ class MainWindow(QMainWindow):
                 speaker_button.setIcon(speaker_icon)
                 speaker_button.setToolTip("Mute/Unmute client.")
                 speaker_button.clicked.connect(
-                    partial(self.change_button_icon, client.identifier, speaker_button)
+                    partial(self.change_button_icon,
+                            client.identifier, speaker_button)
                 )
 
                 if not client.connected:
@@ -351,10 +372,10 @@ class MainWindow(QMainWindow):
                     info_button = QPushButton()
                     info_button.setIcon(QIcon.fromTheme("user-trash-full"))
                     info_button.setToolTip("Delete the client.")
-                    info_button.clicked.connect(lambda client=client.identifier: self.remove_client(client))
+                    info_button.clicked.connect(
+                        lambda client=client.identifier: self.remove_client(client))
 
                 client_layout.addWidget(info_button)
-
 
                 if not client.connected:
                     slider.setEnabled(False)
