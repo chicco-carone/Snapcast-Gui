@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout repository
@@ -32,8 +32,6 @@ jobs:
             pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png:icons" --add-data "icons/Github.png:icons" main.py
           elif [ ${{ runner.os }} == 'Windows' ]; then
             pyinstaller.exe --onefile --name "snapcast-gui" --icon="icons/Snapcast.png" --add-data "icons/Snapcast.png;icons" --add-data "icons/Github.png;icons" --noconsole --uac-admin main.py
-          elif [ ${{ runner.os }} == 'macOS' ]; then
-            pyinstaller --onefile --name "snapcast-gui" --add-data "icons/Snapcast.png:icons" --add-data "icons/Github.png:icons" main.py
           fi
 
       - name: Archive build artifacts
