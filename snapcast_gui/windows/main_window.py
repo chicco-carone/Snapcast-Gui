@@ -5,7 +5,7 @@ import json
 
 from functools import partial
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -41,6 +41,13 @@ class MainWindow(QMainWindow):
     """
     The main window of the Snapcast GUI application which contains the controls for the server and is part of the combinedwindow
     """
+    
+    # Signals for thread-safe UI updates from async callbacks
+    server_status_updated = Signal()
+    client_volume_updated = Signal(str, int)  # client_id, volume
+    client_mute_updated = Signal(str, bool)   # client_id, muted
+    client_connected = Signal(str)            # client_id
+    client_disconnected = Signal(str)         # client_id
 
     def __init__(self, snapcast_settings: SnapcastSettings, client_window: ClientWindow, log_level: int):
         super(MainWindow, self).__init__()
@@ -128,6 +135,13 @@ class MainWindow(QMainWindow):
         self.layout.setAlignment(Qt.AlignTop)
 
         self.server = None
+        
+        # Connect signals for async server updates
+        self.server_status_updated.connect(self.on_server_status_updated)
+        self.client_volume_updated.connect(self.on_client_volume_updated)
+        self.client_mute_updated.connect(self.on_client_mute_updated)
+        self.client_connected.connect(self.on_client_connected)
+        self.client_disconnected.connect(self.on_client_disconnected)
 
         if snapcast_settings.read_setting("general/autoconnect"):
             self.create_server()
@@ -243,6 +257,9 @@ class MainWindow(QMainWindow):
             self.logger.info(f"Connected to server {ip_value}.")
             Notifications.send_notify("Connected to server {}.".format(
                 ip_value), "Snapcast Gui")
+
+            # Set up async callbacks for server updates
+            self.setup_server_callbacks()
 
             self.create_volume_sliders()
             self.connect_button.setText("Disconnect")
@@ -400,14 +417,39 @@ class MainWindow(QMainWindow):
             value (int): The new value of the slider.
         """
         try:
-            for client_layout in self.slider_widgets:
-                if client_layout.itemAt(0).widget().objectName() == client_id:
-                    for i in range(client_layout.count()):
-                        widget = client_layout.itemAt(i).widget()
-                        if isinstance(widget, QSlider):
-                            widget.setValue(value)
-                    self.logger.debug("Slider value updated for {} to {}.".format(client_id, value))
+            if not self.server:
+                return
+                
+            # Find the client to get the friendly name for matching
+            target_client = None
+            for client in self.server.clients:
+                if client.identifier == client_id:
+                    target_client = client
                     break
+            
+            if not target_client:
+                return
+                
+            for client_layout in self.slider_widgets:
+                # Match by friendly name in the text edit widget
+                if client_layout.count() > 1:
+                    client_label = client_layout.itemAt(1).widget()
+                    if isinstance(client_label, QTextEdit):
+                        if client_label.toPlainText() == target_client.friendly_name:
+                            # Find the slider in this layout
+                            for i in range(client_layout.count()):
+                                widget = client_layout.itemAt(i).widget()
+                                if isinstance(widget, QSlider):
+                                    # Temporarily disconnect signal to prevent recursive updates
+                                    widget.valueChanged.disconnect()
+                                    widget.setValue(value)
+                                    # Reconnect the signal
+                                    widget.valueChanged.connect(
+                                        partial(self.change_volume, client_id)
+                                    )
+                                    self.logger.debug("Slider value updated for {} to {}.".format(client_id, value))
+                                    return
+            self.logger.debug("Could not find slider for client {}".format(client_id))
         except Exception as e:
             self.logger.error("Error updating slider value for {}: {}".format(client_id, str(e)))
 
@@ -907,6 +949,170 @@ class MainWindow(QMainWindow):
         dialog.exec()
         self.logger.debug("Client Info Dialog shown.")
 
+    def setup_server_callbacks(self) -> None:
+        """
+        Set up async callbacks for server status updates.
+        This allows the UI to be updated when changes occur on the server.
+        """
+        if self.server:
+            self.logger.debug("Setting up server callbacks for async status updates.")
+            self.server.set_on_update_callback(self.handle_server_update)
+            self.server.set_new_client_callback(self.handle_client_connect)
+            self.server.set_on_disconnect_callback(self.handle_client_disconnect)
+    
+    def handle_server_update(self, server) -> None:
+        """
+        Handle server status updates from async callbacks.
+        Emits Qt signals to update UI safely from main thread.
+        """
+        try:
+            self.logger.debug("Server update received, checking for client changes.")
+            # Emit signal to trigger UI update in main thread
+            self.server_status_updated.emit()
+        except Exception as e:
+            self.logger.error(f"Error handling server update: {str(e)}")
+    
+    def handle_client_connect(self, client) -> None:
+        """
+        Handle new client connection from async callback.
+        """
+        try:
+            self.logger.debug(f"New client connected: {client.identifier}")
+            self.client_connected.emit(client.identifier)
+        except Exception as e:
+            self.logger.error(f"Error handling client connect: {str(e)}")
+    
+    def handle_client_disconnect(self, client) -> None:
+        """
+        Handle client disconnection from async callback.
+        """
+        try:
+            self.logger.debug(f"Client disconnected: {client.identifier}")
+            self.client_disconnected.emit(client.identifier)
+        except Exception as e:
+            self.logger.error(f"Error handling client disconnect: {str(e)}")
+    
+    def on_server_status_updated(self) -> None:
+        """
+        Qt signal handler for server status updates.
+        Updates UI elements based on current server state.
+        """
+        try:
+            if not self.server:
+                return
+                
+            self.logger.debug("Updating UI from server status change.")
+            
+            # Check each client for volume and mute state changes
+            for client in self.server.clients:
+                if client.connected:
+                    # Find the corresponding slider and update if needed
+                    self.update_client_ui_elements(client)
+                    
+        except Exception as e:
+            self.logger.error(f"Error updating UI from server status: {str(e)}")
+    
+    def update_client_ui_elements(self, client) -> None:
+        """
+        Update UI elements for a specific client based on current server state.
+        """
+        try:
+            # Update volume slider
+            self.set_slider_value(client.identifier, client.volume)
+            
+            # Update mute button icon
+            self.update_mute_button_icon(client.identifier, client.muted)
+            
+        except Exception as e:
+            self.logger.error(f"Error updating UI elements for client {client.identifier}: {str(e)}")
+    
+    def update_mute_button_icon(self, client_id: str, muted: bool) -> None:
+        """
+        Update the mute button icon for a specific client.
+        """
+        try:
+            # Find the button in the slider widgets
+            for layout in self.slider_widgets:
+                # Get the first widget which should be the speaker button
+                if layout.count() > 0:
+                    speaker_button = layout.itemAt(0).widget()
+                    if isinstance(speaker_button, QPushButton):
+                        # Check if this button corresponds to our client
+                        # We need to identify which button belongs to which client
+                        # This is a bit tricky since we need to match the layout to the client
+                        if self.find_client_from_layout(layout, client_id):
+                            if muted:
+                                speaker_button.setIcon(QIcon.fromTheme("audio-volume-muted"))
+                            else:
+                                speaker_button.setIcon(QIcon.fromTheme("audio-volume-high"))
+                            break
+        except Exception as e:
+            self.logger.error(f"Error updating mute button icon for client {client_id}: {str(e)}")
+    
+    def find_client_from_layout(self, layout: QHBoxLayout, client_id: str) -> bool:
+        """
+        Helper method to determine if a layout corresponds to a specific client.
+        This is a simplified approach - in a more robust implementation, 
+        we might store client_id as a property of the layout or button.
+        """
+        try:
+            # Get the client label (second widget in the layout)
+            if layout.count() > 1:
+                client_label = layout.itemAt(1).widget()
+                if isinstance(client_label, QTextEdit):
+                    # Find the client with matching friendly name
+                    if self.server:
+                        for client in self.server.clients:
+                            if (client.identifier == client_id and 
+                                client.friendly_name == client_label.toPlainText()):
+                                return True
+            return False
+        except Exception as e:
+            self.logger.error(f"Error finding client from layout: {str(e)}")
+            return False
+    
+    def on_client_volume_updated(self, client_id: str, volume: int) -> None:
+        """
+        Qt signal handler for client volume updates.
+        """
+        try:
+            self.logger.debug(f"Volume updated for client {client_id}: {volume}")
+            self.set_slider_value(client_id, volume)
+        except Exception as e:
+            self.logger.error(f"Error handling volume update for client {client_id}: {str(e)}")
+    
+    def on_client_mute_updated(self, client_id: str, muted: bool) -> None:
+        """
+        Qt signal handler for client mute state updates.
+        """
+        try:
+            self.logger.debug(f"Mute state updated for client {client_id}: {muted}")
+            self.update_mute_button_icon(client_id, muted)
+        except Exception as e:
+            self.logger.error(f"Error handling mute update for client {client_id}: {str(e)}")
+    
+    def on_client_connected(self, client_id: str) -> None:
+        """
+        Qt signal handler for new client connections.
+        """
+        try:
+            self.logger.debug(f"Client connected signal received: {client_id}")
+            # Recreate volume sliders to include new client
+            self.create_volume_sliders()
+        except Exception as e:
+            self.logger.error(f"Error handling client connection for {client_id}: {str(e)}")
+    
+    def on_client_disconnected(self, client_id: str) -> None:
+        """
+        Qt signal handler for client disconnections.
+        """
+        try:
+            self.logger.debug(f"Client disconnected signal received: {client_id}")
+            # Recreate volume sliders to remove disconnected client (unless showing offline)
+            self.create_volume_sliders()
+        except Exception as e:
+            self.logger.error(f"Error handling client disconnection for {client_id}: {str(e)}")
+
     def show_server_info(self) -> None:
         """
         Shows the server info dialog for the server.
@@ -941,6 +1147,15 @@ class MainWindow(QMainWindow):
             widget = item.widget()
             if widget:
                 widget.deleteLater()
+
+        # Clean up server callbacks
+        if self.server:
+            try:
+                self.server.set_on_update_callback(None)
+                self.server.set_new_client_callback(None)
+                self.server.set_on_disconnect_callback(None)
+            except Exception as e:
+                self.logger.warning(f"Error cleaning up server callbacks: {str(e)}")
 
         self.loop.close()
         self.logger.info("Disconnected from server.")
