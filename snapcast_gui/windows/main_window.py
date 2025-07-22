@@ -406,6 +406,10 @@ class MainWindow(QMainWindow):
                 self.slider_widgets.append(client_layout)
                 self.slider_layout.setAlignment(Qt.AlignTop)
         self.scroll_area.setMinimumHeight(300)
+        
+        # Set up callbacks on clients after creating sliders
+        if self.server:
+            self.setup_client_callbacks()
 
     def set_slider_value(self, client_id: str, value: int):
         """
@@ -959,14 +963,46 @@ class MainWindow(QMainWindow):
             self.server.set_on_update_callback(self.handle_server_update)
             self.server.set_new_client_callback(self.handle_client_connect)
             self.server.set_on_disconnect_callback(self.handle_client_disconnect)
+            
+            # Set up callbacks on individual clients for volume/mute changes
+            self.setup_client_callbacks()
     
-    def handle_server_update(self, server) -> None:
+    def setup_client_callbacks(self) -> None:
+        """
+        Set up callbacks on individual clients to detect volume and mute changes.
+        This is called whenever clients are updated.
+        """
+        if not self.server:
+            return
+            
+        for client in self.server.clients:
+            # Set a callback that will be triggered when this client's properties change
+            client.set_callback(self.handle_client_update)
+            self.logger.debug(f"Set callback for client {client.identifier}")
+    
+    def handle_client_update(self, client) -> None:
+        """
+        Handle individual client updates (volume, mute, etc.).
+        This gets called when a client's properties change.
+        """
+        try:
+            self.logger.debug(f"Client update callback triggered for {client.identifier}: volume={client.volume}, muted={client.muted}")
+            
+            # Emit specific signals for volume and mute changes
+            self.client_volume_updated.emit(client.identifier, client.volume)
+            self.client_mute_updated.emit(client.identifier, client.muted)
+            
+        except Exception as e:
+            self.logger.error(f"Error handling client update for {client.identifier}: {str(e)}")
+    
+    def handle_server_update(self) -> None:
         """
         Handle server status updates from async callbacks.
         Emits Qt signals to update UI safely from main thread.
         """
         try:
-            self.logger.debug("Server update received, checking for client changes.")
+            self.logger.debug("Server update callback triggered")
+            
             # Emit signal to trigger UI update in main thread
             self.server_status_updated.emit()
         except Exception as e:
@@ -978,6 +1014,11 @@ class MainWindow(QMainWindow):
         """
         try:
             self.logger.debug(f"New client connected: {client.identifier}")
+            
+            # Set up callback on the new client
+            client.set_callback(self.handle_client_update)
+            self.logger.debug(f"Set callback for new client {client.identifier}")
+            
             self.client_connected.emit(client.identifier)
         except Exception as e:
             self.logger.error(f"Error handling client connect: {str(e)}")
@@ -1006,6 +1047,7 @@ class MainWindow(QMainWindow):
             # Check each client for volume and mute state changes
             for client in self.server.clients:
                 if client.connected:
+                    self.logger.debug(f"Checking client {client.identifier}: volume={client.volume}, muted={client.muted}")
                     # Find the corresponding slider and update if needed
                     self.update_client_ui_elements(client)
                     
@@ -1017,6 +1059,8 @@ class MainWindow(QMainWindow):
         Update UI elements for a specific client based on current server state.
         """
         try:
+            self.logger.debug(f"Updating UI elements for client {client.identifier}: volume={client.volume}, muted={client.muted}")
+            
             # Update volume slider
             self.set_slider_value(client.identifier, client.volume)
             
@@ -1154,6 +1198,11 @@ class MainWindow(QMainWindow):
                 self.server.set_on_update_callback(None)
                 self.server.set_new_client_callback(None)
                 self.server.set_on_disconnect_callback(None)
+                
+                # Clean up client callbacks
+                for client in self.server.clients:
+                    client.set_callback(None)
+                    
             except Exception as e:
                 self.logger.warning(f"Error cleaning up server callbacks: {str(e)}")
 
