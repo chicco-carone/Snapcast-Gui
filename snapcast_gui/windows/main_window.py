@@ -62,6 +62,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
         self.layout = QVBoxLayout(main_widget)
+        
+        # Track previous client states for change detection
+        self.previous_client_states: Dict[str, Dict[str, Any]] = {}
 
         ip_label = QLabel("IP Address", self)
         self.layout.addWidget(ip_label)
@@ -407,9 +410,9 @@ class MainWindow(QMainWindow):
                 self.slider_layout.setAlignment(Qt.AlignTop)
         self.scroll_area.setMinimumHeight(300)
         
-        # Set up callbacks on clients after creating sliders
+        # Update previous client states after creating sliders
         if self.server:
-            self.setup_client_callbacks()
+            self.update_previous_client_states()
 
     def set_slider_value(self, client_id: str, value: int):
         """
@@ -964,47 +967,70 @@ class MainWindow(QMainWindow):
             self.server.set_new_client_callback(self.handle_client_connect)
             self.server.set_on_disconnect_callback(self.handle_client_disconnect)
             
-            # Set up callbacks on individual clients for volume/mute changes
-            self.setup_client_callbacks()
+            # Initialize previous client states for change detection
+            self.update_previous_client_states()
     
-    def setup_client_callbacks(self) -> None:
+    def update_previous_client_states(self) -> None:
         """
-        Set up callbacks on individual clients to detect volume and mute changes.
-        This is called whenever clients are updated.
+        Update the stored previous client states for change detection.
         """
         if not self.server:
             return
             
+        self.previous_client_states.clear()
         for client in self.server.clients:
-            # Set a callback that will be triggered when this client's properties change
-            client.set_callback(self.handle_client_update)
-            self.logger.debug(f"Set callback for client {client.identifier}")
-    
-    def handle_client_update(self, client) -> None:
-        """
-        Handle individual client updates (volume, mute, etc.).
-        This gets called when a client's properties change.
-        """
-        try:
-            self.logger.debug(f"Client update callback triggered for {client.identifier}: volume={client.volume}, muted={client.muted}")
-            
-            # Emit specific signals for volume and mute changes
-            self.client_volume_updated.emit(client.identifier, client.volume)
-            self.client_mute_updated.emit(client.identifier, client.muted)
-            
-        except Exception as e:
-            self.logger.error(f"Error handling client update for {client.identifier}: {str(e)}")
+            self.previous_client_states[client.identifier] = {
+                'volume': client.volume,
+                'muted': client.muted,
+                'connected': client.connected
+            }
+            self.logger.debug(f"Stored state for client {client.identifier}: volume={client.volume}, muted={client.muted}")
     
     def handle_server_update(self) -> None:
         """
         Handle server status updates from async callbacks.
+        Compares current client states with previous states to detect changes.
         Emits Qt signals to update UI safely from main thread.
         """
         try:
-            self.logger.debug("Server update callback triggered")
+            self.logger.debug("Server update callback triggered, checking for client changes")
             
-            # Emit signal to trigger UI update in main thread
-            self.server_status_updated.emit()
+            if not self.server:
+                return
+                
+            # Check each client for changes compared to previous state
+            for client in self.server.clients:
+                client_id = client.identifier
+                current_state = {
+                    'volume': client.volume,
+                    'muted': client.muted,
+                    'connected': client.connected
+                }
+                
+                # Get previous state if it exists
+                previous_state = self.previous_client_states.get(client_id, {})
+                
+                # Check for volume changes
+                if 'volume' in previous_state and previous_state['volume'] != current_state['volume']:
+                    self.logger.debug(f"Volume change detected for {client_id}: {previous_state['volume']} -> {current_state['volume']}")
+                    self.client_volume_updated.emit(client_id, current_state['volume'])
+                
+                # Check for mute state changes  
+                if 'muted' in previous_state and previous_state['muted'] != current_state['muted']:
+                    self.logger.debug(f"Mute state change detected for {client_id}: {previous_state['muted']} -> {current_state['muted']}")
+                    self.client_mute_updated.emit(client_id, current_state['muted'])
+                    
+                # Check for connection state changes
+                if 'connected' in previous_state and previous_state['connected'] != current_state['connected']:
+                    self.logger.debug(f"Connection state change detected for {client_id}: {previous_state['connected']} -> {current_state['connected']}")
+                    if current_state['connected']:
+                        self.client_connected.emit(client_id)
+                    else:
+                        self.client_disconnected.emit(client_id)
+                
+                # Update stored state
+                self.previous_client_states[client_id] = current_state
+                
         except Exception as e:
             self.logger.error(f"Error handling server update: {str(e)}")
     
@@ -1015,9 +1041,13 @@ class MainWindow(QMainWindow):
         try:
             self.logger.debug(f"New client connected: {client.identifier}")
             
-            # Set up callback on the new client
-            client.set_callback(self.handle_client_update)
-            self.logger.debug(f"Set callback for new client {client.identifier}")
+            # Initialize state for the new client
+            self.previous_client_states[client.identifier] = {
+                'volume': client.volume,
+                'muted': client.muted,
+                'connected': client.connected
+            }
+            self.logger.debug(f"Initialized state for new client {client.identifier}")
             
             self.client_connected.emit(client.identifier)
         except Exception as e:
@@ -1029,6 +1059,12 @@ class MainWindow(QMainWindow):
         """
         try:
             self.logger.debug(f"Client disconnected: {client.identifier}")
+            
+            # Remove the client from our state tracking
+            if client.identifier in self.previous_client_states:
+                del self.previous_client_states[client.identifier]
+                self.logger.debug(f"Removed state tracking for disconnected client {client.identifier}")
+            
             self.client_disconnected.emit(client.identifier)
         except Exception as e:
             self.logger.error(f"Error handling client disconnect: {str(e)}")
