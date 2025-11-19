@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 
 from snapcast_gui.misc.notifications import Notifications
 from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
+from snapcast_gui.misc.log_highlighter import LogHighlighter
 
 from typing import TYPE_CHECKING
 
@@ -113,6 +114,7 @@ class ServerWindow(QMainWindow):
 
         self.log_area = QTextEdit(self)
         self.log_area.setReadOnly(True)
+        self.log_area.setAcceptRichText(True)  # Enable HTML formatting
         layout.addWidget(self.log_area)
 
         self.snapserver_thread = QThread()
@@ -167,7 +169,7 @@ class ServerWindow(QMainWindow):
         self.connect_button.setText("Stop Snapserver")
         self.connect_button.clicked.disconnect()
         self.connect_button.clicked.connect(self.stop_snapserver)
-        Notifications.send_notify("Snapserver started", "Snapserver")
+        Notifications.send_notify("Snapserver started", "Snapserver", self.snapcast_settings)
 
     def stop_snapserver(self) -> None:
         """
@@ -211,30 +213,32 @@ class ServerWindow(QMainWindow):
         self.snapserver_thread.quit()
         self.snapserver_thread.wait()
         self.process_finished("Snapserver process finished.")
-        Notifications.send_notify("Snapserver stopped", "Snapserver")
+        Notifications.send_notify("Snapserver stopped", "Snapserver", self.snapcast_settings)
 
     def process_finished(self, log: str) -> None:
         """
-        Appends the log to the log area and resets the snapserver process and button.
+        Appends the highlighted log to the log area and resets the snapserver process and button.
         """
-        self.log_area.append(log)
+        highlighted_log = LogHighlighter.highlight_text(log + "\n")
+        self.log_area.insertHtml(highlighted_log)
         self.snapserver_process = None
         self.connect_button.setText("Run Snapserver")
         self.connect_button.clicked.disconnect()
         self.connect_button.clicked.connect(self.run_snapserver)
-        Notifications.send_notify(log, "Snapserver")
+        Notifications.send_notify(log, "Snapserver", self.snapcast_settings)
         self.logger.info(f"serverwindow: {log}")
 
     def read_output(self):
         """
-        Reads the output of the snapserver process and appends it to the log area.
+        Reads the output of the snapserver process, highlights it, and appends to the log area.
 
-        This method reads the standard output of the snapserver process and decodes it into a string.
-        The decoded output is then appended to the log area.
+        This method reads the standard output of the snapserver process, applies HTML highlighting
+        for keywords and timestamps, then appends the formatted HTML to the log area.
         """
         self.logger.debug("Reading snapserver output.")
         output = self.snapserver_process.readAllStandardOutput().data().decode()
-        self.log_area.append(output)
+        highlighted_output = LogHighlighter.highlight_text(output)
+        self.log_area.insertHtml(highlighted_output)
 
     def closeEvent(self, event) -> None:
         """

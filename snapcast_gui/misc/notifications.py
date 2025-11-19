@@ -13,10 +13,17 @@ class Notifications:
     logger.setLevel(logging.INFO)
 
     @staticmethod
-    def send_notify(title: str, message: str) -> None:
+    def send_notify(title: str, message: str, snapcast_settings=None) -> None:
         """
         Sends a notification with the specified title and message. Handles the icon based on the platform.
+
+        Args:
+            title: The title of the notification.
+            message: The message of the notification.
+            snapcast_settings: Optional SnapcastSettings instance to check if notifications are enabled.
         """
+        if snapcast_settings and not snapcast_settings.read_setting("behavior/enable_notifications"):
+            return
         try:
             notification = Notify()
             notification.application_name = "Snapcast-Gui"

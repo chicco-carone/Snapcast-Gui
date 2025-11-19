@@ -1,7 +1,6 @@
 import logging
 import os
 import shutil
-import subprocess
 import sys
 
 from PySide6.QtCore import QStandardPaths, Qt, QUrl
@@ -83,7 +82,7 @@ class SettingsWindow(QMainWindow):
 
         self.sidebar_options = QListWidget()
         self.sidebar_options.addItems(
-            ["Themes", "Snapclient", "Snapserver", "Shortcuts", "Logs", "About"]
+            ["Themes", "Snapclient", "Snapserver", "Shortcuts", "Logs", "About", "Behavior"]
         )
         self.sidebar_options.currentRowChanged.connect(self.show_settings)
         self.sidebar_options.setObjectName("sidebar_options")
@@ -111,6 +110,8 @@ class SettingsWindow(QMainWindow):
                 self.setup_log_settings()
             case 5:
                 self.setup_about_settings()
+            case 6:
+                self.setup_behavior_settings()
 
     def clear_settings_layout(self):
         """
@@ -305,7 +306,7 @@ class SettingsWindow(QMainWindow):
             self.custom_snapclient_path_text.setEnabled(False)
             
         snapclient_version_text = QLabel()
-        snapclient_version, _ = self.get_versions()
+        snapclient_version = SnapcastGuiVariables.snapclient_version
         if snapclient_version != "":
             snapclient_version_text.setText("Snapclient version " + snapclient_version)
         else:
@@ -410,7 +411,7 @@ class SettingsWindow(QMainWindow):
             custom_snapserver_path_text.setEnabled(False)
             
         snapserver_version_text = QLabel()
-        _ , snapserver_version = self.get_versions()
+        snapserver_version = SnapcastGuiVariables.snapserver_version
         if snapserver_version != "":
             snapserver_version_text.setText("Snapserver version " + snapserver_version)
         else:
@@ -651,8 +652,8 @@ class SettingsWindow(QMainWindow):
         )
         snapcast_gui_version_label.setObjectName("snapcast_gui_version_label")
         self.settings_layout.addWidget(snapcast_gui_version_label)
-        snapclient_version, snapserver_version = self.get_versions()
-        snapclient_version_label = QLabel(f"Snapclient Version: {snapclient_version}")
+
+        snapclient_version_label = QLabel(f"Snapclient Version: {SnapcastGuiVariables.snapclient_version}")
         snapclient_version_label.setObjectName("snapclient_version_label")
         self.settings_layout.addWidget(snapclient_version_label)
 
@@ -661,7 +662,7 @@ class SettingsWindow(QMainWindow):
             snapserver_version_label.setObjectName("snapserver_version_label")
             snapserver_version_label.setToolTip("Snapserver version is only available on Linux")
         else:
-            snapserver_version_label = QLabel(f"Snapserver Version: {snapserver_version}")
+            snapserver_version_label = QLabel(f"Snapserver Version: {SnapcastGuiVariables.snapserver_version}")
             snapserver_version_label.setObjectName("snapserver_version_label")
 
         self.settings_layout.addWidget(snapserver_version_label)
@@ -682,6 +683,32 @@ class SettingsWindow(QMainWindow):
         github_button.setObjectName("github_button")
         # self.settings_layout.addWidget(github_button)
 
+    def setup_behavior_settings(self):
+        """
+        Sets up the behavior settings.
+
+        This method creates and configures the UI elements related to behavior settings,
+        such as checkboxes for enabling notifications.
+        """
+        self.logger.info("Setting up behavior settings")
+        behavior_label = QLabel("Behavior Settings")
+        behavior_label.setAlignment(Qt.AlignCenter)
+        behavior_label.setObjectName("behavior_label")
+        self.settings_layout.addWidget(behavior_label)
+
+        self.enable_notifications_checkbox = QCheckBox("Enable Notifications")
+        self.enable_notifications_checkbox.setChecked(
+            self.snapcast_settings.read_setting("behavior/enable_notifications")
+        )
+        self.enable_notifications_checkbox.setObjectName("enable_notifications_checkbox")
+        self.settings_layout.addWidget(self.enable_notifications_checkbox)
+
+        self.enable_notifications_checkbox.stateChanged.connect(
+            lambda: self.snapcast_settings.update_setting(
+                "behavior/enable_notifications", self.enable_notifications_checkbox.isChecked()
+            )
+        )
+
     def check_latest_version(self):
         """
         Checks the latest version of Snapcast-Gui on Github.
@@ -700,23 +727,6 @@ class SettingsWindow(QMainWindow):
                     "No New Version Available",
                     f"Snapcast-Gui is up to date: {SnapcastGuiVariables.snapcast_gui_version}",
                 )
-
-    def get_versions(self) -> tuple[str, str]:
-        """
-        Retrieves the versions of snapclient and snapserver using subprocess.
-
-        Returns:
-            A tuple containing the snapclient version and snapserver version.
-        """
-        snapclient_version = subprocess.run(
-            [self.snapcast_settings.read_setting("snapclient/custom_path"), "--version"], capture_output=True, text=True
-        ).stdout.split()[1]
-        snapserver_version = subprocess.run(
-            [self.snapcast_settings.read_setting("snapserver/custom_path"), "--version"], capture_output=True, text=True
-        ).stdout.split()[1]
-        self.logger.debug(f"Snapclient version: {snapclient_version}")
-        self.logger.debug(f"Snapserver version: {snapserver_version}")
-        return snapclient_version, snapserver_version
 
     def open_file(self, file_path: str):
         """

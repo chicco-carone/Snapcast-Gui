@@ -1,6 +1,7 @@
 import logging
 import re
 import sys
+from packaging import version
 
 from PySide6.QtCore import QProcess, QSize, Qt, QThread
 from PySide6.QtGui import QIcon
@@ -9,6 +10,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QMessageBox,
     QPushButton,
@@ -20,6 +22,8 @@ from PySide6.QtWidgets import (
 from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
 
 from snapcast_gui.misc.notifications import Notifications
+from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
+from snapcast_gui.misc.log_highlighter import LogHighlighter
 from typing import List, Union
 
 
@@ -81,6 +85,40 @@ class ClientWindow(QMainWindow):
         self.show_advanced_checkbox = QCheckBox("Show Advanced", self)
         self.show_advanced_checkbox.stateChanged.connect(self.toggle_advanced_options)
         layout.addWidget(self.show_advanced_checkbox)
+
+        # Connection settings (part of advanced options)
+        self.connection_label = QLabel("Connection Settings", self)
+        self.connection_label.setObjectName("connection_label")
+        layout.addWidget(self.connection_label)
+
+        connection_layout = QHBoxLayout()
+
+        self.protocol_label = QLabel("Protocol:", self)
+        self.protocol_dropdown = QComboBox(self)
+        self.protocol_dropdown.addItems(["tcp", "ws", "wss"])
+        self.protocol_dropdown.currentTextChanged.connect(self.update_protocol)
+        self.protocol_dropdown.setToolTip("Select the connection protocol")
+        self.protocol_dropdown.setMinimumWidth(80)
+
+        connection_layout.addWidget(self.protocol_label)
+        connection_layout.addWidget(self.protocol_dropdown)
+        connection_layout.addStretch()
+
+        layout.addLayout(connection_layout)
+
+        port_layout = QHBoxLayout()
+        self.port_label = QLabel("Port:", self)
+        self.port_input = QLineEdit(self)
+        self.port_input.setText("1705")
+        self.port_input.setToolTip("Enter the server port (default: 1780 for ws/wss, 1705 for tcp)")
+        self.port_input.setMinimumWidth(80)
+        self.port_input.setMaximumWidth(100)
+
+        port_layout.addWidget(self.port_label)
+        port_layout.addWidget(self.port_input)
+        port_layout.addStretch()
+
+        layout.addLayout(port_layout)
 
         self.pcms_label = QLabel("PCMs", self)
         self.pcms_dropdown = QComboBox(self)
@@ -148,6 +186,7 @@ class ClientWindow(QMainWindow):
         self.log_area = QTextEdit(self)
         self.log_area.setReadOnly(True)
         self.log_area.setToolTip("Log of the Snapclient process")
+        self.log_area.setAcceptRichText(True)  # Enable HTML formatting
         layout.addWidget(self.log_area)
 
         self.snapclient_thread = QThread()
@@ -162,6 +201,38 @@ class ClientWindow(QMainWindow):
             self.show_advanced_checkbox.setChecked(True)
         else:
             self.hide_advanced_options()
+
+        # Initialize connection settings from saved values
+        saved_protocol = self.snapcast_settings.read_setting("snapclient/protocol")
+        if saved_protocol in ["tcp", "ws", "wss"]:
+            index = self.protocol_dropdown.findText(saved_protocol)
+            if index >= 0:
+                self.protocol_dropdown.setCurrentIndex(index)
+
+        saved_port = self.snapcast_settings.read_setting("snapclient/port")
+        if saved_port and saved_port != "1705":  # Only set if different from default
+            self.port_input.setText(saved_port)
+
+        # Initialize with version-aware defaults on first run
+        if not saved_protocol:
+            try:
+                client_version = SnapcastGuiVariables.snapclient_version
+                if client_version and version.parse(client_version) >= version.parse("0.34.0"):
+                    # New version: use WebSocket protocol with port 1780
+                    index = self.protocol_dropdown.findText("ws")
+                    if index >= 0:
+                        self.protocol_dropdown.setCurrentIndex(index)
+                    self.port_input.setText("1780")
+                else:
+                    # Old version: use TCP protocol with port 1705
+                    index = self.protocol_dropdown.findText("tcp")
+                    if index >= 0:
+                        self.protocol_dropdown.setCurrentIndex(index)
+                    self.port_input.setText("1705")
+            except Exception as e:
+                # Fall back to TCP/1705 on error
+                self.logger.warning(f"Failed to initialize defaults: {e}")
+                self.port_input.setText("1705")
 
         self.populate_ip_dropdown()
 
@@ -291,23 +362,99 @@ class ClientWindow(QMainWindow):
         self.buffer_size = self.buffer_size_dropdown.currentText()
         self.logger.error(f"Buffer size set to {self.buffer_size}")
 
+    def update_protocol(self) -> None:
+        """
+        Update the protocol settings when the protocol dropdown changes.
+
+        This method saves the selected protocol to settings and updates port defaults.
+        """
+        selected_protocol = self.protocol_dropdown.currentText()
+        self.snapcast_settings.update_setting("snapclient/protocol", selected_protocol)
+
+        # Update port default based on protocol and version
+        try:
+            client_version = SnapcastGuiVariables.snapclient_version
+            if client_version and version.parse(client_version) >= version.parse("0.34.0"):
+                if selected_protocol in ["ws", "wss"]:
+                    self.port_input.setText("1780")
+                else:
+                    self.port_input.setText("1705")
+            else:
+                self.port_input.setText("1705")
+        except Exception as e:
+            self.logger.warning(f"Failed to update port default: {e}")
+            self.port_input.setText("1705")
+
+        self.logger.debug(f"Protocol set to {selected_protocol}")
+
     def generate_snapclient_arguments(self) -> Union[List[str], None]:
         """
         Generate the arguments for the snapclient process using the selected values from the dropdowns.
+        Uses URI format for snapclient 0.34.0+ and legacy -h/-p format for older versions.
 
         Returns:
             list: A list of arguments for the snapclient process.
                     Returns None if any required values are not selected.
         """
         arguments = []
+
+        # Get protocol and port from UI settings
+        protocol = self.protocol_dropdown.currentText()
+        port = self.port_input.text().strip()
+
+        # Validate port input
+        try:
+            port_int = int(port)
+            if port_int < 1 or port_int > 65535:
+                QMessageBox.warning(self, "Invalid Port", "Port must be between 1 and 65535.")
+                return None
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Port", "Port must be a valid number.")
+            return None
+
+        # Determine server connection format based on version
         if self.ip_input.text() != "":
-            arguments.append("-h")
-            arguments.append(self.ip_input.text())
+            try:
+                client_version = SnapcastGuiVariables.snapclient_version
+                if client_version and version.parse(client_version) >= version.parse("0.34.0"):
+                    # Use URI format for snapclient 0.34.0+: protocol://ip:port
+                    server_uri = f"{protocol}://{self.ip_input.text()}:{port}"
+                    arguments.append(server_uri)
+                    self.logger.debug(f"Using URI format for snapclient {client_version}: {server_uri}")
+                else:
+                    # Use legacy format for older versions
+                    arguments.extend(["-h", self.ip_input.text()])
+                    if port != "1705":  # Only add port if not default
+                        arguments.extend(["-p", port])
+                    self.logger.debug(f"Using legacy format for snapclient {client_version}: -h {self.ip_input.text()} -p {port}")
+            except Exception as e:
+                # Fall back to legacy format if version parsing fails
+                self.logger.warning(f"Failed to parse snapclient version '{client_version}', using legacy format: {e}")
+                arguments.extend(["-h", self.ip_input.text()])
+
+        # Save current settings
+        self.snapcast_settings.update_setting("snapclient/protocol", protocol)
+        self.snapcast_settings.update_setting("snapclient/port", port)
+
         if sys.platform == "linux":
             arguments.append("--player")
             arguments.append(f"{self.audio_engine}:buffer_time:{self.buffer_size}")
+
+        # Only add --pcm for versions that support it
         if self.audio_engine == "pulse":
-            arguments.extend(["--pcm", self.pcms_dropdown.currentText()])
+            try:
+                client_version = SnapcastGuiVariables.snapclient_version
+                if client_version and version.parse(client_version) >= version.parse("0.34.0"):
+                    # --pcm argument not supported in 0.34.0+, skip it
+                    self.logger.debug(f"--pcm argument not supported in snapclient {client_version}, skipping")
+                else:
+                    # Use --pcm for older versions
+                    arguments.extend(["--pcm", self.pcms_dropdown.currentText()])
+                    self.logger.debug(f"Using --pcm for snapclient {client_version}")
+            except Exception as e:
+                # Fall back to not using --pcm if version parsing fails
+                self.logger.warning(f"Failed to parse snapclient version '{client_version}', skipping --pcm: {e}")
+
         if (
             self.frequency_dropdown.currentText() != "Default"
             or self.bitrate_dropdown.currentText() != "Default"
@@ -385,7 +532,7 @@ class ClientWindow(QMainWindow):
         self.connect_button.clicked.disconnect()
         self.connect_button.clicked.connect(self.stop_snapclient)
         self.disable_controls()
-        Notifications.send_notify("Snapclient started", "Snapclient")
+        Notifications.send_notify("Snapclient started", "Snapclient", self.snapcast_settings)
 
     def stop_snapclient(self) -> None:
         """
@@ -400,6 +547,11 @@ class ClientWindow(QMainWindow):
             self.snapclient_process is not None
             and self.snapclient_process.state() == QProcess.Running
         ):
+            termination_message = "Terminating existing snapclient process..."
+            highlighted_message = LogHighlighter.highlight_text(termination_message + "\n")
+            self.log_area.insertHtml(highlighted_message)
+            self.logger.info(termination_message)
+
             self.cleanup_connected = True
             if self.snapclient_finished_signal is not None:
                 self.snapclient_finished_signal.disconnect()
@@ -439,7 +591,8 @@ class ClientWindow(QMainWindow):
         Args:
             log: The log message from the snapclient process.
         """
-        self.log_area.append(log)
+        highlighted_log = LogHighlighter.highlight_text(log + "\n")
+        self.log_area.insertHtml(highlighted_log)
         self.snapclient_process = None
         self.connect_button.setText("Run Snapclient")
         self.enable_controls()
@@ -450,7 +603,7 @@ class ClientWindow(QMainWindow):
                 self.snapcast_settings.read_setting("snapclient/custom_path")
             )
         )
-        Notifications.send_notify(log, "Snapclient")
+        Notifications.send_notify(log, "Snapclient", self.snapcast_settings)
         self.logger.info(f" Logs from snapclient process{log}")
 
     def disable_controls(self) -> None:
@@ -467,6 +620,9 @@ class ClientWindow(QMainWindow):
         self.frequency_dropdown.setEnabled(False)
         self.pcms_dropdown.setEnabled(False)
         self.pcms_refresh_button.setEnabled(False)
+        self.protocol_dropdown.setEnabled(False)
+        self.port_input.setEnabled(False)
+        self.port_input.setReadOnly(True)
         self.ip_input.setEnabled(False)
         self.ip_input.setReadOnly(True)
         if sys.platform == "linux":
@@ -477,7 +633,7 @@ class ClientWindow(QMainWindow):
         Enable the controls in the window when needed.
 
         This method enables various controls in the window, allowing the user to interact with them.
-        Additionally, it sets the readOnly property of ip_input to False, allowing the user to edit its value.
+        Additionally, it sets the readOnly property of inputs to False, allowing the user to edit their values.
         """
         self.logger.debug("Enabling controls")
         self.buffer_size_dropdown.setEnabled(True)
@@ -486,6 +642,9 @@ class ClientWindow(QMainWindow):
         self.frequency_dropdown.setEnabled(True)
         self.pcms_dropdown.setEnabled(True)
         self.pcms_refresh_button.setEnabled(True)
+        self.protocol_dropdown.setEnabled(True)
+        self.port_input.setEnabled(True)
+        self.port_input.setReadOnly(False)
         self.ip_input.setEnabled(True)
         self.ip_input.setReadOnly(False)
         if sys.platform == "linux":
@@ -531,6 +690,11 @@ class ClientWindow(QMainWindow):
         and the channels dropdown.
         """
         self.logger.debug("Hiding advanced options")
+        self.connection_label.hide()
+        self.protocol_label.hide()
+        self.protocol_dropdown.hide()
+        self.port_label.hide()
+        self.port_input.hide()
         self.pcms_label.hide()
         self.pcms_dropdown.hide()
         self.pcms_refresh_button.hide()
@@ -543,13 +707,18 @@ class ClientWindow(QMainWindow):
         """
         Show the advanced options in the window.
 
-        This method displays the advanced options in the client window, including the PCMs dropdown,
-        the resample options, and the channel configuration dropdowns.
+        This method displays the advanced options in the client window, including connection settings,
+        the PCMs dropdown, the resample options, and the channel configuration dropdowns.
 
         Args:
             None
         """
         self.logger.debug("Showing advanced options")
+        self.connection_label.show()
+        self.protocol_label.show()
+        self.protocol_dropdown.show()
+        self.port_label.show()
+        self.port_input.show()
         self.pcms_label.show()
         self.pcms_dropdown.show()
         self.pcms_refresh_button.show()
@@ -560,11 +729,12 @@ class ClientWindow(QMainWindow):
 
     def read_output(self):
         """
-        Read the output of the snapclient process and append it to the log area.
+        Read the output of the snapclient process, highlight it, and append to the log area.
 
-        This method reads the standard output of the snapclient process and decodes it as a string.
-        The decoded output is then appended to the log area.
+        This method reads the standard output of the snapclient process, applies HTML highlighting
+        for keywords and timestamps, then appends the formatted HTML to the log area.
         """
         self.logger.debug("Reading output")
         output = self.snapclient_process.readAllStandardOutput().data().decode()
-        self.log_area.append(output)
+        highlighted_output = LogHighlighter.highlight_text(output)
+        self.log_area.insertHtml(highlighted_output)

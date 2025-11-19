@@ -53,11 +53,11 @@ class ClientInfoDialog(QDialog):
                 client_info.get("friendly_name", "Unknown"))
         )
 
-        self.layout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
 
         name_label = QLabel("Name")
         name_label.setToolTip("Client's name")
-        self.layout.addWidget(name_label)
+        self.main_layout.addWidget(name_label)
         name = QTextEdit(self)
         name.setText(client_info.get("friendly_name", ""))
         name.setFixedHeight(30)
@@ -69,22 +69,22 @@ class ClientInfoDialog(QDialog):
                 qtextedit=name,
             )
         )
-        name.textChanged.connect(client_label.setText(name.toPlainText()))
-        self.layout.addWidget(name)
+        name.textChanged.connect(lambda: client_label.setText(name.toPlainText()))
+        self.main_layout.addWidget(name)
 
         identifier_label = QLabel("Identifier")
         identifier_label.setToolTip("Unique identifier for the client")
-        self.layout.addWidget(identifier_label)
+        self.main_layout.addWidget(identifier_label)
         identifier_value = client_info.get("identifier", "Unknown")
         identifier = QLabel(identifier_value)
         identifier.setToolTip("Unique identifier for the client")
-        self.layout.addWidget(identifier)
+        self.main_layout.addWidget(identifier)
 
         version_layout = QHBoxLayout()
 
         version_label = QLabel("Version")
         version_label.setToolTip("Version of the client")
-        self.layout.addWidget(version_label)
+        self.main_layout.addWidget(version_label)
         version = QLabel()
         version.setToolTip("Version of the client")
         version_text: str = client_info.get("version", "Unknown")
@@ -96,11 +96,11 @@ class ClientInfoDialog(QDialog):
         self.check_version_button.clicked.connect(self.check_version)
         version_layout.addWidget(self.check_version_button)
 
-        self.layout.addLayout(version_layout)
+        self.main_layout.addLayout(version_layout)
 
         volume_label = QLabel("Volume")
         volume_label.setToolTip("Volume level of the client")
-        self.layout.addWidget(volume_label)
+        self.main_layout.addWidget(volume_label)
         volume = QSpinBox(self)
         volume.setToolTip("Change the volume of the client")
         volume.setValue(client_info.get("volume", 0))
@@ -110,7 +110,7 @@ class ClientInfoDialog(QDialog):
             partial(mainwindow.change_volume, client_info["identifier"])
         )
         volume.valueChanged.connect(lambda: slider.setValue(volume.value()))
-        self.layout.addWidget(volume)
+        self.main_layout.addWidget(volume)
 
         self.muted = QPushButton("Muted", self)
         self.muted.setCheckable(True)
@@ -124,11 +124,11 @@ class ClientInfoDialog(QDialog):
         self.muted.clicked.connect(
             lambda: self.change_muted_state(client_info, mute_button)
         )
-        self.layout.addWidget(self.muted)
+        self.main_layout.addWidget(self.muted)
 
         latency_label = QLabel("Latency")
         latency_label.setToolTip("Latency of the client")
-        self.layout.addWidget(latency_label)
+        self.main_layout.addWidget(latency_label)
         latency = QSpinBox(self)
         latency.setToolTip("Change the latency of the client")
         latency.setMinimum(-2000)
@@ -137,17 +137,17 @@ class ClientInfoDialog(QDialog):
         latency.valueChanged.connect(
             partial(self.mainwindow.change_latency, client_info["identifier"])
         )
-        self.layout.addWidget(latency)
+        self.main_layout.addWidget(latency)
 
         group_information_label = QLabel("Group Information:")
         group_information_label.setToolTip(
             "Information about the group the client belongs to"
         )
-        self.layout.addWidget(group_information_label)
+        self.main_layout.addWidget(group_information_label)
 
         group_label = QLabel("Group Name")
         group_label.setToolTip("Name of the group the client belongs to")
-        self.layout.addWidget(group_label)
+        self.main_layout.addWidget(group_label)
         group_text = client_info.get("group", "Unknown")
         group = QTextEdit(self)
         group.setToolTip("Change the group name of the client")
@@ -161,12 +161,12 @@ class ClientInfoDialog(QDialog):
                 client_info["identifier"], group.toPlainText()
             )
         )
-        self.layout.addWidget(group)
+        self.main_layout.addWidget(group)
 
         group_volume_label = QLabel("Group Volume")
         group_volume_label.setToolTip(
             "Volume of the group the client belongs to")
-        self.layout.addWidget(group_volume_label)
+        self.main_layout.addWidget(group_volume_label)
 
         group_volume = QSpinBox(self)
         group_volume.setToolTip(
@@ -177,23 +177,23 @@ class ClientInfoDialog(QDialog):
         group_volume.valueChanged.connect(
             partial(mainwindow.change_group_volume, client_info["identifier"])
         )
-        self.layout.addWidget(group_volume)
+        self.main_layout.addWidget(group_volume)
 
         groups_available_label = QLabel("Groups Available")
         groups_available_label.setToolTip("Groups available to join")
-        self.layout.addWidget(groups_available_label)
+        self.main_layout.addWidget(groups_available_label)
 
         sources_label = QLabel("Sources")
         sources_label.setToolTip("Sources available to join")
-        self.layout.addWidget(sources_label)
+        self.main_layout.addWidget(sources_label)
 
         sources_dropdown = QComboBox()
         for source in sources_dictionary:
             sources_dropdown.addItem(source)
         sources_dropdown.setToolTip("Change the source of the client")
-        self.layout.addWidget(sources_dropdown)
+        self.main_layout.addWidget(sources_dropdown)
 
-        self.setLayout(self.layout)
+        self.setLayout(self.main_layout)
 
     def closeEvent(self, event) -> None:
         self.logger.debug("Closed.")

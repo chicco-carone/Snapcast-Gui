@@ -71,22 +71,26 @@ class MainWindow(QMainWindow):
         self.ip_input.setPlaceholderText("Enter IP Address")
         self.ip_input.setToolTip(
             "List of all the IP addresses in the config file.")
+        # Connect signal to dynamically enable/disable Remove IP button
+        self.ip_input.textChanged.connect(self.update_remove_ip_button_state)
         self.layout.addWidget(self.ip_dropdown)
 
         ip_button_layout = QHBoxLayout()
 
-        add_ip_button = QPushButton("Add IP", self)
-        ip_button_layout.addWidget(add_ip_button)
-        add_ip_button.setToolTip("Add the IP address to the config file.")
-        add_ip_button.clicked.connect(self.add_ip)
-        add_ip_button.setMinimumWidth(50)
+        self.add_ip_button = QPushButton("Add IP", self)
+        ip_button_layout.addWidget(self.add_ip_button)
+        self.add_ip_button.setToolTip("Add the IP address to the config file.")
+        self.add_ip_button.clicked.connect(self.add_ip)
+        self.add_ip_button.setMinimumWidth(50)
 
-        remove_ip_button = QPushButton("Remove IP", self)
-        ip_button_layout.addWidget(remove_ip_button)
-        remove_ip_button.setToolTip(
+        self.remove_ip_button = QPushButton("Remove IP", self)
+        ip_button_layout.addWidget(self.remove_ip_button)
+        self.remove_ip_button.setToolTip(
             "Remove the IP address from the config file.")
-        remove_ip_button.clicked.connect(self.remove_ip)
-        remove_ip_button.setMinimumWidth(50)
+        self.remove_ip_button.clicked.connect(self.remove_ip)
+        self.remove_ip_button.setMinimumWidth(50)
+        # Initially disable if no valid text
+        self.update_remove_ip_button_state()
 
         self.layout.addLayout(ip_button_layout)
 
@@ -137,11 +141,22 @@ class MainWindow(QMainWindow):
         Adds an IP address to the config file and dropdown, while updating the client window dropdown.
 
         If the IP address already exists in the config file, a warning message is displayed and the IP address is not added.
+        If the input is empty or only whitespace, an error message is displayed.
 
         Raises:
             Exception: If there is an error adding the IP address to the config file.
         """
-        if self.ip_input.text() in self.ip_addresses:
+        ip_text = str(self.ip_input.text()).strip()
+
+        # Validate input - reject empty or whitespace-only strings
+        if not ip_text:
+            QMessageBox.warning(
+                self, "Invalid Input", "Please enter a valid IP address or hostname."
+            )
+            self.logger.warning("Attempted to add empty/whitespace IP address")
+            return
+
+        if ip_text in self.ip_addresses:
             QMessageBox.warning(
                 self, "Warning", "IP Address already exists in the config file."
             )
@@ -149,14 +164,14 @@ class MainWindow(QMainWindow):
                 "IP Address already exists in the config file.")
             return
 
-        self.ip_addresses.append(str(self.ip_input.text()))
-        self.ip_dropdown.addItem(str(self.ip_input.text()))
+        self.ip_addresses.append(ip_text)
+        self.ip_dropdown.addItem(ip_text)
         self.ip_dropdown.setCurrentIndex(
-            self.ip_dropdown.findText(str(self.ip_input.text()))
+            self.ip_dropdown.findText(ip_text)
         )
 
         try:
-            self.snapcast_settings.add_ip(str(self.ip_dropdown.currentText()))
+            self.snapcast_settings.add_ip(ip_text)
             self.logger.info("IP Address added to config file.")
             QMessageBox.information(
                 self, "Success", "IP Address added to config file.")
@@ -209,6 +224,15 @@ class MainWindow(QMainWindow):
             )
             return
 
+    def update_remove_ip_button_state(self) -> None:
+        """
+        Updates the enabled state of the Remove IP button based on whether the current input text
+        exists in the stored IP addresses list.
+        """
+        current_text = str(self.ip_input.text()).strip()
+        # Enable button only if the text exists in the IP addresses list
+        self.remove_ip_button.setEnabled(current_text in self.ip_addresses)
+
     def create_server(self) -> None:
         """
         Checks if the server is listening on the default port and if it is then connects to the server and creates the necessary UI elements.
@@ -218,14 +242,45 @@ class MainWindow(QMainWindow):
         """
         ip_value = str(self.ip_input.text())
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        result = sock.connect_ex((ip_value, 1705))
-        sock.close()
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex((ip_value, 1705))
+            sock.close()
+        except socket.gaierror as e:
+            # DNS resolution failed - invalid hostname/IP
+            self.connect_button.setText("Connect")
+            self.connect_button.setEnabled(True)
+            error_msg = f"DNS resolution failed for '{ip_value}'. Please check the IP address or hostname."
+            QMessageBox.critical(self, "DNS Error", error_msg)
+            self.logger.error(f"DNS resolution error for {ip_value}: {e}")
+            return
+        except Exception as e:
+            # Generic socket error
+            self.connect_button.setText("Connect")
+            self.connect_button.setEnabled(True)
+            error_msg = f"Network error while connecting to {ip_value}:1705: {str(e)}"
+            QMessageBox.critical(self, "Network Error", error_msg)
+            self.logger.error(f"Socket error connecting to {ip_value}:1705: {e}")
+            return
+
         if result != 0:
-            QMessageBox.critical(
-                self, "Error", "Server is not online or unreachable.")
-            self.logger.error("Server is not online or unreachable.")
+            # Reset button state on socket failure
+            self.connect_button.setText("Connect")
+            self.connect_button.setEnabled(True)
+
+            # Provide specific error messages based on socket error
+            if result == 110:  # Connection timed out
+                error_msg = "Connection timed out. Server may be unreachable or firewalled."
+            elif result == 111:  # Connection refused
+                error_msg = "Connection refused. Server is not running or not accepting connections on port 1705."
+            elif result == 113:  # No route to host
+                error_msg = "No route to host. Check network connectivity and IP address."
+            else:
+                error_msg = f"Cannot connect to server at {ip_value}:1705 (Error code: {result})"
+
+            QMessageBox.critical(self, "Connection Failed", error_msg)
+            self.logger.error(f"Socket connection failed to {ip_value}:1705 - {error_msg}")
             return
 
         try:
@@ -242,7 +297,7 @@ class MainWindow(QMainWindow):
             self.connected_ip = ip_value
             self.logger.info(f"Connected to server {ip_value}.")
             Notifications.send_notify("Connected to server {}.".format(
-                ip_value), "Snapcast Gui")
+                ip_value), "Snapcast Gui", self.snapcast_settings)
 
             self.create_volume_sliders()
             self.connect_button.setText("Disconnect")
@@ -251,14 +306,34 @@ class MainWindow(QMainWindow):
             self.connect_button.setToolTip("Disconnect from the server.")
             self.connect_button.setEnabled(True)
             return self.server
+        except socket.gaierror as e:
+            # DNS resolution error
+            error_msg = f"DNS resolution failed for '{ip_value}'. Please check the IP address or hostname."
+            QMessageBox.critical(self, "DNS Error", error_msg)
+            self.logger.error(f"DNS resolution error for {ip_value}: {e}")
+        except ConnectionError as e:
+            # General connection error
+            error_msg = f"Network connection error: {str(e)}"
+            QMessageBox.critical(self, "Connection Error", error_msg)
+            self.logger.error(f"Connection error to {ip_value}: {e}")
         except Exception as e:
-            QMessageBox.critical(
-                self, "Error", f"Could not connect to server: {str(e)}"
-            )
-            self.logger.error(f"Could not connect to server: {str(e)}")
-            self.connect_button.setText("Connect")
-            self.connect_button.setEnabled(True)
-            return
+            # Generic error with more specific messaging
+            error_type = type(e).__name__
+            if "timeout" in str(e).lower():
+                error_msg = "Connection timed out. The server may be overloaded or unresponsive."
+            elif "refused" in str(e).lower():
+                error_msg = "Connection refused. Check that Snapcast server is running and accepting connections."
+            elif "unreachable" in str(e).lower():
+                error_msg = "Host unreachable. Check network connection and server availability."
+            else:
+                error_msg = f"Failed to establish connection: {str(e)}"
+
+            QMessageBox.critical(self, "Connection Failed", error_msg)
+            self.logger.error(f"Unexpected error connecting to server {ip_value}: {error_type} - {e}")
+
+        # Reset button state on any failure
+        self.connect_button.setText("Connect")
+        self.connect_button.setEnabled(True)
 
     def create_sources_list(self) -> Dict[str, str]:
         """
@@ -944,7 +1019,7 @@ class MainWindow(QMainWindow):
 
         self.loop.close()
         self.logger.info("Disconnected from server.")
-        Notifications.send_notify("Disconnected from server.", "Snapcast Gui")
+        Notifications.send_notify("Disconnected from server.", "Snapcast Gui", self.snapcast_settings)
 
         self.connect_button.setText("Connect")
         self.connect_button.clicked.disconnect()

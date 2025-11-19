@@ -1,5 +1,6 @@
 import logging
 import os
+import signal
 import sys
 
 from PySide6.QtWidgets import QApplication
@@ -79,6 +80,9 @@ FileFolderChecks.set_file_permission()
 log_level = read_log_level(SnapcastGuiVariables.log_level_file_path)
 log_file_path = SnapcastGuiVariables.log_file_path
 LoggerSetup.setup_logging(log_file_path, log_level)
+
+# Initialize program versions globally
+SnapcastGuiVariables.initialize_program_versions()
 
 logger = LoggerSetup.get_logger("main")
 
@@ -180,6 +184,15 @@ def main():
                 snapcast_settings.set_ignore_popup(dialog.ignore_popup_checkbox.isChecked())
                 new_path = dialog.get_path()
                 snapcast_settings.write_setting("snapserver/custom_path", new_path)
+
+    # Handle Ctrl-C (SIGINT) for clean shutdown
+    def signal_handler(signum, frame):
+        """Handle SIGINT signal (Ctrl-C) to gracefully exit the application."""
+        logger.info("Received SIGINT signal, shutting down gracefully...")
+        app.quit()
+
+    # Register signal handler for SIGINT
+    signal.signal(signal.SIGINT, signal_handler)
 
     combined_window.show()
     sys.exit(app.exec())
