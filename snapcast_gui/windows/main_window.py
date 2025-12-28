@@ -299,15 +299,19 @@ class MainWindow(QMainWindow):
             self.logger.warning("IP Address already exists in the config file.")
             return
 
-        self.ip_addresses.append(ip_text)
-        self.ip_dropdown.addItem(ip_text)
-        self.ip_dropdown.setCurrentIndex(self.ip_dropdown.findText(ip_text))
-
         try:
             self.snapcast_settings.add_ip(ip_text)
+            self.ip_addresses.append(ip_text)
+            self.ip_dropdown.addItem(ip_text)
+            self.ip_dropdown.setCurrentIndex(self.ip_dropdown.findText(ip_text))
             self.logger.info("IP Address added to config file.")
             QMessageBox.information(self, "Success", "IP Address added to config file.")
             self.client_window.populate_ip_dropdown()
+        except ValueError as e:
+            QMessageBox.warning(
+                self, "Invalid Input", f"Invalid IP address: {str(e)}"
+            )
+            self.logger.error(f"Invalid IP address: {str(e)}")
         except Exception as e:
             QMessageBox.critical(
                 self, "Error", f"Could not add IP Address to config file: {str(e)}"
@@ -315,7 +319,6 @@ class MainWindow(QMainWindow):
             self.logger.error(
                 f"mainwindow: Could not add IP Address to config file: {str(e)}"
             )
-            return
 
     def remove_ip(self) -> None:
         """

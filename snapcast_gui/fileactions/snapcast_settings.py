@@ -115,10 +115,19 @@ class SnapcastSettings:
             settings = QSettings(
                 SnapcastGuiVariables.config_file_path, QSettings.IniFormat
             )
-            ip_addresses = settings.value("SERVER/ip_addresses").split(",")
-            for ip_address in ip_addresses:
-                if ip_address == "":
-                    ip_addresses.remove(ip_address)
+            existing_value = settings.value("SERVER/ip_addresses", "")
+            if not existing_value:
+                self.logger.debug("No IP addresses found in config file.")
+                return []
+            
+            ip_addresses = existing_value.split(",")
+            ip_addresses = [ip.strip() for ip in ip_addresses if ip.strip()]
+            
+            if len(ip_addresses) != len(existing_value.split(",")):
+                settings.setValue("SERVER/ip_addresses", ",".join(ip_addresses))
+                settings.sync()
+                self.logger.info("Removed empty IP addresses from config file.")
+            
             self.logger.debug("Read config file: {}".format(ip_addresses))
             return ip_addresses
         except IsADirectoryError:
@@ -139,19 +148,34 @@ class SnapcastSettings:
 
         Args:
             ip: The IP address to add.
+
+        Raises:
+            ValueError: If the IP address is empty or contains only whitespace.
         """
+        ip_stripped = ip.strip()
+        if not ip_stripped:
+            raise ValueError("IP address cannot be empty or whitespace.")
+        
         try:
             settings = QSettings(
                 SnapcastGuiVariables.config_file_path, QSettings.IniFormat
             )
-            ip_addresses = settings.value("SERVER/ip_addresses", "localhost").split(",")
-            ip_addresses.append(ip)
+            # Check if setting exists; if not, initialize with empty string
+            existing_value = settings.value("SERVER/ip_addresses", "")
+            if existing_value:
+                ip_addresses = existing_value.split(",")
+                # Clean existing list of any empty entries
+                ip_addresses = [addr.strip() for addr in ip_addresses if addr.strip()]
+            else:
+                ip_addresses = []
+            
+            ip_addresses.append(ip_stripped)
             settings.setValue("SERVER/ip_addresses", ",".join(ip_addresses))
             settings.sync()
         except Exception as e:
             self.logger.error(f"Could not add IP Address to config file: {str(e)}")
-            return
-        self.logger.debug("IP Address {} added to config file.".format(ip))
+            raise
+        self.logger.debug("IP Address {} added to config file.".format(ip_stripped))
 
     def remove_ip(self, ip: str) -> None:
         """
@@ -164,11 +188,24 @@ class SnapcastSettings:
             settings = QSettings(
                 SnapcastGuiVariables.config_file_path, QSettings.IniFormat
             )
-            ip_addresses = settings.value("SERVER/ip_addresses", "localhost").split(",")
-            ip_addresses.remove(ip)
+            # Check if setting exists; if not, nothing to remove
+            existing_value = settings.value("SERVER/ip_addresses", "")
+            if not existing_value:
+                self.logger.warning("No IP addresses to remove from config file.")
+                return
+            
+            ip_addresses = existing_value.split(",")
+            ip_addresses = [addr.strip() for addr in ip_addresses if addr.strip()]
+            
+            if ip in ip_addresses:
+                ip_addresses.remove(ip)
+            else:
+                self.logger.warning(f"IP address {ip} not found in config file.")
+                return
+            
             settings.setValue("SERVER/ip_addresses", ",".join(ip_addresses))
             settings.sync()
         except Exception as e:
             self.logger.error(f"Could not remove IP Address from config file: {str(e)}")
-            return
+            raise
         self.logger.debug("IP Address {} removed from config file.".format(ip))
