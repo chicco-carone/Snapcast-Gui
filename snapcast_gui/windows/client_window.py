@@ -97,7 +97,7 @@ class ClientWindow(QMainWindow):
 
         self.protocol_label = QLabel("Protocol:", self)
         self.protocol_dropdown = QComboBox(self)
-        self.protocol_dropdown.addItems(["tcp", "ws", "wss"])
+        self.protocol_dropdown.addItems(["ws", "wss", "tcp"])
         self.protocol_dropdown.currentTextChanged.connect(self.update_protocol)
         self.protocol_dropdown.setToolTip("Select the connection protocol")
         self.protocol_dropdown.setMinimumWidth(80)
@@ -126,17 +126,17 @@ class ClientWindow(QMainWindow):
 
         self.pcms_label = QLabel("PCMs", self)
         self.pcms_dropdown = QComboBox(self)
-        self.pcms_dropdown.addItem("Switch to PulseAudio to see PCMs")
+        self.pcms_dropdown.addItem("Default")
         self.pcms_dropdown.setToolTip(
-            "Select the output PCM to use (only for PulseAudio)"
+            "Select the output PCM to use"
         )
-        self.pcms_dropdown.setEnabled(False)
+        self.pcms_dropdown.setEnabled(True)
 
         self.pcms_refresh_button = QPushButton()
         self.pcms_refresh_button.setIcon(QIcon.fromTheme("view-refresh"))
         self.pcms_refresh_button.setIconSize(QSize(24, 24))
         self.pcms_refresh_button.setToolTip("Refresh PCMs List")
-        self.pcms_refresh_button.setEnabled(False)
+        self.pcms_refresh_button.setEnabled(True)
         self.pcms_refresh_button.clicked.connect(self.update_audio_engine)
 
         dropdown_height = self.pcms_dropdown.sizeHint().height()
@@ -254,30 +254,29 @@ class ClientWindow(QMainWindow):
     def update_audio_engine(self):
         """
         Updates the audio engine based on the selected value from the dropdown.
-        If PulseAudio is selected, it populates the PCMs dropdown.
+        Populates the PCMs dropdown for both ALSA and PulseAudio.
         """
         self.audio_engine = self.audio_engine_dropdown.currentText().lower()
         if self.audio_engine == "pulseaudio":
             self.audio_engine = "pulse"
             self.logger.info("Audio engine set to PulseAudio")
-            self.pcms_dropdown.clear()
-            self.pcms_dropdown.setEnabled(True)
-            self.pcms_refresh_button.setEnabled(True)
-
-            self.snapclient_process = QProcess()
-            self.snapclient_process.setProgram("snapclient")
-            self.snapclient_process.setArguments(["--list"])
-            self.snapclient_process.setProcessChannelMode(QProcess.MergedChannels)
-            self.snapclient_process.readyReadStandardOutput.connect(
-                self.read_snapclient_output
-            )
-            self.snapclient_process.start()
-            self.logger.info("Snapclient process started to get PCMs")
-            self.snapclient_process.waitForFinished()
         else:
-            self.pcms_dropdown.clear()
-            self.pcms_dropdown.addItem("Switch to PulseAudio to see PCMs")
-            self.pcms_dropdown.setEnabled(False)
+            self.logger.info("Audio engine set to ALSA")
+        
+        self.pcms_dropdown.clear()
+        self.pcms_dropdown.setEnabled(True)
+        self.pcms_refresh_button.setEnabled(True)
+
+        self.snapclient_process = QProcess()
+        self.snapclient_process.setProgram("snapclient")
+        self.snapclient_process.setArguments(["--player", self.audio_engine, "--list"])
+        self.snapclient_process.setProcessChannelMode(QProcess.MergedChannels)
+        self.snapclient_process.readyReadStandardOutput.connect(
+            self.read_snapclient_output
+        )
+        self.snapclient_process.start()
+        self.logger.info(f"Snapclient process started to get PCMs for {self.audio_engine}")
+        self.snapclient_process.waitForFinished()
 
     def read_snapclient_output(self) -> List[str]:
         """
