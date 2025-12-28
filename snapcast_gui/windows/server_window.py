@@ -41,7 +41,9 @@ class ServerWindow(QMainWindow):
         self.snapserver_finished_signal = None
 
         self.setGeometry(100, 0, 400, 500)
-        self.setWindowTitle("Snapserver {}".format(SnapcastGuiVariables.snapcast_gui_version))
+        self.setWindowTitle(
+            "Snapserver {}".format(SnapcastGuiVariables.snapcast_gui_version)
+        )
         self.setWindowIcon(QIcon(SnapcastGuiVariables.snapcast_icon_path))
 
         main_widget = QWidget(self)
@@ -58,7 +60,7 @@ class ServerWindow(QMainWindow):
         self.before_command.setPlaceholderText(
             "Command to run before starting the snapserver"
         )
-        
+
         self.before_command.setText(
             snapcast_settings.read_setting("snapserver/config_before_start") or ""
         )
@@ -85,7 +87,13 @@ class ServerWindow(QMainWindow):
             snapcast_settings.read_setting("snapserver/config_after_start") or ""
         )
         self.after_command.setFixedHeight(30)
-        if (len(self.snapcast_settings.read_setting("snapserver/config_after_start") or "") < 30):
+        if (
+            len(
+                self.snapcast_settings.read_setting("snapserver/config_after_start")
+                or ""
+            )
+            < 30
+        ):
             self.after_command.setFixedHeight(30)
         else:
             self.after_command.setFixedHeight(60)
@@ -100,7 +108,9 @@ class ServerWindow(QMainWindow):
             self.before_command.setToolTip(
                 "Set the command to run before starting the snapserver. Hint: You can concatenate multiple commands with &&."
             )
-            self.after_command.setToolTip("Set the command to run after stopping the snapserver. Hint: You can concatenate multiple commands with &&.")
+            self.after_command.setToolTip(
+                "Set the command to run after stopping the snapserver. Hint: You can concatenate multiple commands with &&."
+            )
         else:
             self.before_command.setToolTip(
                 "Set the command to run before starting the snapserver. Hint: You can concatenate multiple commands with &."
@@ -135,8 +145,7 @@ class ServerWindow(QMainWindow):
             and self.snapserver_process.state() == QProcess.Running
         ):
             QMessageBox.critical(self, "Error", "Snapserver process already running.")
-            self.logger.warning(
-                "Snapserver process already running.")
+            self.logger.warning("Snapserver process already running.")
             return
 
         def start_snapserver():
@@ -150,13 +159,13 @@ class ServerWindow(QMainWindow):
             self.run_command(self.before_command.toPlainText())
             self.before_command.setReadOnly(True)
             self.after_command.setReadOnly(True)
-            self.logger.debug("Snapserver executable {}".format(
-                self.snapcast_settings.read_setting("snapserver/custom_path")
-            ))
             self.logger.debug(
-                "Snapserver command: {}".format(
-                    self.snapserver_process.program()
+                "Snapserver executable {}".format(
+                    self.snapcast_settings.read_setting("snapserver/custom_path")
                 )
+            )
+            self.logger.debug(
+                "Snapserver command: {}".format(self.snapserver_process.program())
             )
             self.snapserver_process.started.connect(
                 lambda: self.logger.info("Snapserver process started.")
@@ -169,7 +178,9 @@ class ServerWindow(QMainWindow):
         self.connect_button.setText("Stop Snapserver")
         self.connect_button.clicked.disconnect()
         self.connect_button.clicked.connect(self.stop_snapserver)
-        Notifications.send_notify("Snapserver started", "Snapserver", self.snapcast_settings)
+        Notifications.send_notify(
+            "Snapserver started", "Snapserver", self.snapcast_settings
+        )
 
     def stop_snapserver(self) -> None:
         """
@@ -192,8 +203,7 @@ class ServerWindow(QMainWindow):
             self.connect_button.setText("Run Snapserver")
         else:
             QMessageBox.warning(self, "Warning", "Snapserver process is not running.")
-            self.logger.warning(
-                "Snapserver process is not running.")
+            self.logger.warning("Snapserver process is not running.")
             self.process_finished("")
 
     def cleanup_snapserver_thread(self) -> None:
@@ -213,7 +223,9 @@ class ServerWindow(QMainWindow):
         self.snapserver_thread.quit()
         self.snapserver_thread.wait()
         self.process_finished("Snapserver process finished.")
-        Notifications.send_notify("Snapserver stopped", "Snapserver", self.snapcast_settings)
+        Notifications.send_notify(
+            "Snapserver stopped", "Snapserver", self.snapcast_settings
+        )
 
     def process_finished(self, log: str) -> None:
         """
@@ -280,4 +292,6 @@ class ServerWindow(QMainWindow):
         """
         if command != "":
             process = subprocess.run(command)
-            self.logger.debug(f"Ran command: {command} with output: {process.stdout.decode()}")
+            self.logger.debug(
+                f"Ran command: {command} with output: {process.stdout.decode()}"
+            )

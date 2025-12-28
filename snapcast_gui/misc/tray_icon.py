@@ -24,12 +24,12 @@ class TrayIcon(QSystemTrayIcon):
 
     def __init__(
         self,
-        main_window: 'MainWindow',
-        client_window: 'ClientWindow',
-        server_window: 'ServerWindow',
-        settings_window: 'SettingsWindow',
-        combined_window: 'CombinedWindow',
-        snapcast_settings: 'SnapcastSettings',
+        main_window: "MainWindow",
+        client_window: "ClientWindow",
+        server_window: "ServerWindow",
+        settings_window: "SettingsWindow",
+        combined_window: "CombinedWindow",
+        snapcast_settings: "SnapcastSettings",
         log_level: int,
     ):
         """

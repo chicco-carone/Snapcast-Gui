@@ -1,25 +1,27 @@
+import asyncio
 import logging
 import os
 import signal
 import sys
 
-from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QDialog
+from PySide6.QtWidgets import QApplication, QDialog
+from qasync import QEventLoop
 
-from snapcast_gui.windows.combined_window import CombinedWindow
+from snapcast_gui.dialogs.path_input_dialog import PathInputDialog
 from snapcast_gui.fileactions.file_folder_checks import FileFolderChecks
-from snapcast_gui.windows.main_window import MainWindow
+from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
+from snapcast_gui.misc.async_bridge import AsyncBridge
+from snapcast_gui.misc.logger_setup import LoggerSetup
 from snapcast_gui.misc.notifications import Notifications
+from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
 from snapcast_gui.windows.client_window import ClientWindow
+from snapcast_gui.windows.combined_window import CombinedWindow
+from snapcast_gui.windows.main_window import MainWindow
 from snapcast_gui.windows.server_window import ServerWindow
 from snapcast_gui.windows.settings_window import SettingsWindow
 
-from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
-from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
-from snapcast_gui.misc.logger_setup import LoggerSetup
-from snapcast_gui.dialogs.path_input_dialog import PathInputDialog
 
 def read_log_level(log_level_file_path: str) -> int:
     """
@@ -141,8 +143,17 @@ def main():
     snapcast_settings = SnapcastSettings(log_level)
 
     app = QApplication(sys.argv)
+    
+    # Create qasync event loop that integrates asyncio with Qt
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
+    
+    # Initialize the AsyncBridge singleton with the shared event loop
+    async_bridge = AsyncBridge.instance(log_level)
+    async_bridge.set_event_loop(loop)
+    
     client_window = ClientWindow(snapcast_settings, log_level)
-    main_window = MainWindow(snapcast_settings, client_window, log_level)
+    main_window = MainWindow(snapcast_settings, client_window, async_bridge, log_level)
     server_window = ServerWindow(snapcast_settings, log_level)
     settings_window = SettingsWindow(snapcast_settings, main_window, log_level)
     combined_window = CombinedWindow(
@@ -195,7 +206,10 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     combined_window.show()
-    sys.exit(app.exec())
+    
+    # Run the qasync event loop (integrates asyncio with Qt event loop)
+    with loop:
+        loop.run_forever()
 
 if __name__ == "__main__":
     main()

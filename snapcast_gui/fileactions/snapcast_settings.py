@@ -52,7 +52,8 @@ class SnapcastSettings:
         }
 
         settings = QSettings(
-            SnapcastGuiVariables.settings_file_path, QSettings.IniFormat)
+            SnapcastGuiVariables.settings_file_path, QSettings.IniFormat
+        )
         for key, value in default_settings.items():
             if not settings.contains(key):
                 settings.setValue(key, value)
@@ -67,7 +68,8 @@ class SnapcastSettings:
             value: The new value for the setting.
         """
         settings = QSettings(
-            SnapcastGuiVariables.settings_file_path, QSettings.IniFormat)
+            SnapcastGuiVariables.settings_file_path, QSettings.IniFormat
+        )
         settings.setValue(key, value)
         settings.sync()
         self.logger.debug("Updated setting: {} = {}".format(key, value))
@@ -80,7 +82,8 @@ class SnapcastSettings:
             The value of the setting.
         """
         settings = QSettings(
-            SnapcastGuiVariables.settings_file_path, QSettings.IniFormat)
+            SnapcastGuiVariables.settings_file_path, QSettings.IniFormat
+        )
         value = settings.value(setting_name)
         if value is None:
             value = ""
@@ -90,9 +93,7 @@ class SnapcastSettings:
             elif value.lower() == "false":
                 value = False
         self.logger.debug(
-            "Read setting: {} = {}, type {}".format(
-                setting_name, value, type(value)
-            )
+            "Read setting: {} = {}, type {}".format(setting_name, value, type(value))
         )
         return value
 
@@ -112,7 +113,8 @@ class SnapcastSettings:
             with open(SnapcastGuiVariables.config_file_path, "r") as f:
                 f.close()
             settings = QSettings(
-                SnapcastGuiVariables.config_file_path, QSettings.IniFormat)
+                SnapcastGuiVariables.config_file_path, QSettings.IniFormat
+            )
             ip_addresses = settings.value("SERVER/ip_addresses").split(",")
             for ip_address in ip_addresses:
                 if ip_address == "":
@@ -120,8 +122,7 @@ class SnapcastSettings:
             self.logger.debug("Read config file: {}".format(ip_addresses))
             return ip_addresses
         except IsADirectoryError:
-            os.removedirs(os.path.dirname(
-                SnapcastGuiVariables.config_file_path))
+            os.removedirs(os.path.dirname(SnapcastGuiVariables.config_file_path))
             self.logger.error(
                 "File path is a directory: {}. Removing directory".format(
                     SnapcastGuiVariables.config_file_path
@@ -135,47 +136,39 @@ class SnapcastSettings:
     def add_ip(self, ip: str) -> None:
         """
         Adds an IP address to the config file.
-        
+
         Args:
             ip: The IP address to add.
         """
         try:
             settings = QSettings(
-                SnapcastGuiVariables.config_file_path, QSettings.IniFormat)
-            ip_addresses = settings.value(
-                "SERVER/ip_addresses", "localhost").split(",")
+                SnapcastGuiVariables.config_file_path, QSettings.IniFormat
+            )
+            ip_addresses = settings.value("SERVER/ip_addresses", "localhost").split(",")
             ip_addresses.append(ip)
             settings.setValue("SERVER/ip_addresses", ",".join(ip_addresses))
             settings.sync()
         except Exception as e:
-            self.logger.error(
-                f"Could not add IP Address to config file: {str(e)}"
-            )
+            self.logger.error(f"Could not add IP Address to config file: {str(e)}")
             return
-        self.logger.debug(
-            "IP Address {} added to config file.".format(ip)
-        )
+        self.logger.debug("IP Address {} added to config file.".format(ip))
 
     def remove_ip(self, ip: str) -> None:
         """
         Removes an IP address from the config file.
-        
+
         Args:
             ip: The IP address to remove.
         """
         try:
             settings = QSettings(
-                SnapcastGuiVariables.config_file_path, QSettings.IniFormat)
-            ip_addresses = settings.value(
-                "SERVER/ip_addresses", "localhost").split(",")
+                SnapcastGuiVariables.config_file_path, QSettings.IniFormat
+            )
+            ip_addresses = settings.value("SERVER/ip_addresses", "localhost").split(",")
             ip_addresses.remove(ip)
             settings.setValue("SERVER/ip_addresses", ",".join(ip_addresses))
             settings.sync()
         except Exception as e:
-            self.logger.error(
-                f"Could not remove IP Address from config file: {str(e)}"
-            )
+            self.logger.error(f"Could not remove IP Address from config file: {str(e)}")
             return
-        self.logger.debug(
-            "IP Address {} removed from config file.".format(ip)
-        )
+        self.logger.debug("IP Address {} removed from config file.".format(ip))

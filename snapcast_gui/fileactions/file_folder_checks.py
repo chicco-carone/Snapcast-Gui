@@ -13,26 +13,32 @@ class FileFolderChecks:
         """
         try:
             os.makedirs(SnapcastGuiVariables.config_dir, exist_ok=True)
-            print("Folders and files created successfully in {}".format(
-                SnapcastGuiVariables.config_dir))
+            print(
+                "Folders and files created successfully in {}".format(
+                    SnapcastGuiVariables.config_dir
+                )
+            )
         except FileExistsError:
-            print("Folders and files already exist in {}".format(
-                SnapcastGuiVariables.config_dir))
+            print(
+                "Folders and files already exist in {}".format(
+                    SnapcastGuiVariables.config_dir
+                )
+            )
             pass
         except PermissionError:
             Notifications.send_notify(
-                "Error", "Permission denied to create config folder.")
+                "Error", "Permission denied to create config folder."
+            )
             logging.error("Permission denied to create folders and files.")
         except Exception as e:
-            Notifications.send_notify(
-                "Error", f"Error creating folders and files: {e}")
+            Notifications.send_notify("Error", f"Error creating folders and files: {e}")
             logging.error(f"Error creating folders and files: {e}")
 
     @staticmethod
     def create_missing_files() -> None:
         """
         Creates any missing files required by the application.
-        
+
         Raises:
             IsADirectoryError: If a file path is a directory and removes the directory.
         """
@@ -42,18 +48,14 @@ class FileFolderChecks:
             SnapcastGuiVariables.config_file_path,
             SnapcastGuiVariables.log_level_file_path,
         ]
-        missing_files = [
-            file for file in required_files if not os.path.exists(file)]
+        missing_files = [file for file in required_files if not os.path.exists(file)]
         if missing_files:
             for file in missing_files:
                 os.makedirs(os.path.dirname(file), exist_ok=True)
                 try:
                     with open(file, "w") as f:
                         f.write("")
-                        print(
-                            "snapcastsettings: Created missing file: {}".format(
-                                file)
-                        )
+                        print("snapcastsettings: Created missing file: {}".format(file))
                 except IsADirectoryError:
                     os.removedirs(os.path.dirname(file))
                     logging.error(
@@ -61,8 +63,7 @@ class FileFolderChecks:
                             file
                         )
                     )
-                print(
-                    "snapcastsettings: Created missing file: {}".format(file))
+                print("snapcastsettings: Created missing file: {}".format(file))
 
     @staticmethod
     def set_file_permission() -> None:
@@ -75,9 +76,9 @@ class FileFolderChecks:
             os.chmod(SnapcastGuiVariables.settings_file_path, 0o644)
         except PermissionError:
             Notifications.send_notify(
-                "Error", "Permission denied to set file permissions.")
+                "Error", "Permission denied to set file permissions."
+            )
             logging.error("Permission denied to set file permissions.")
         except Exception as e:
-            Notifications.send_notify(
-                "Error", f"Error setting file permissions: {e}")
+            Notifications.send_notify("Error", f"Error setting file permissions: {e}")
             logging.error(f"Error setting file permissions: {e}")

@@ -1,18 +1,16 @@
 import logging
 from functools import partial
 from typing import TYPE_CHECKING
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QLabel,
     QPushButton,
+    QSlider,
     QSpinBox,
     QTextEdit,
     QVBoxLayout,
-    QSlider,
-    QComboBox,
-    QWidget
 )
 
 if TYPE_CHECKING:
@@ -36,12 +34,12 @@ class GroupInfoDialog(QDialog):
         self.logger = logging.getLogger("GroupInfoDialog")
         self.logger.setLevel(log_level)
 
-        self.logger.debug("Created for client {}.".format(
-            client_info.get("identifier", "Unknown")))
+        self.logger.debug(
+            "Created for client {}.".format(client_info.get("identifier", "Unknown"))
+        )
 
         self.setWindowTitle(
-            "Group Info for {}".format(
-                client_info.get("friendly_name", "Unknown"))
+            "Group Info for {}".format(client_info.get("friendly_name", "Unknown"))
         )
 
         self.layout = QVBoxLayout()
@@ -57,7 +55,8 @@ class GroupInfoDialog(QDialog):
                 mainwindow.change_group_name,
                 client_info.get("identifier", "Unknown"),
                 name.toPlainText(),
-            ))
+            )
+        )
         self.layout.addWidget(name)
 
         identifier_label = QLabel("Identifier")
@@ -87,11 +86,10 @@ class GroupInfoDialog(QDialog):
             partial(
                 mainwindow.change_group_source,
                 client_info.get("identifier", "Unknown"),
-                sources_dictionary.get(
-                    sources_dropdown.currentText(), "Unknown"),
-            ))
-        sources_dropdown.setCurrentText(
-            client_info.get("source_name", "Unknown"))
+                sources_dictionary.get(sources_dropdown.currentText(), "Unknown"),
+            )
+        )
+        sources_dropdown.setCurrentText(client_info.get("source_name", "Unknown"))
         self.layout.addWidget(sources_dropdown)
 
         self.muted = QPushButton("Muted", self)

@@ -5,10 +5,12 @@ from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
 
 from notifypy import Notify
 
+
 class Notifications:
     """
     Class for sending notifications.
     """
+
     logger = logging.getLogger("Notifications")
     logger.setLevel(logging.INFO)
 
@@ -22,7 +24,9 @@ class Notifications:
             message: The message of the notification.
             snapcast_settings: Optional SnapcastSettings instance to check if notifications are enabled.
         """
-        if snapcast_settings and not snapcast_settings.read_setting("behavior/enable_notifications"):
+        if snapcast_settings and not snapcast_settings.read_setting(
+            "behavior/enable_notifications"
+        ):
             return
         try:
             notification = Notify()
@@ -30,7 +34,9 @@ class Notifications:
             notification.title = title
             notification.message = message
         except Exception as e:
-            Notifications.logger.error("Platform not supported: {} {}".format(sys.platform, e))
+            Notifications.logger.error(
+                "Platform not supported: {} {}".format(sys.platform, e)
+            )
 
         Notifications.logger.info("Sending notification: {}".format(message))
 

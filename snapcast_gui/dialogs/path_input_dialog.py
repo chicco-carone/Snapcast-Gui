@@ -1,6 +1,7 @@
 import logging
 
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -8,8 +9,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QVBoxLayout,
-    QCheckBox,
 )
+
 from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
 
 
@@ -33,7 +34,9 @@ class PathInputDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
 
-        self.label = QLabel(f"Unable to find path for {program_name}. Please provide the path:")
+        self.label = QLabel(
+            f"Unable to find path for {program_name}. Please provide the path:"
+        )
         self.layout.addWidget(self.label)
 
         self.path_edit = QLineEdit(self)
@@ -47,7 +50,8 @@ class PathInputDialog(QDialog):
         self.layout.addWidget(self.ignore_popup_checkbox)
 
         self.button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self
+        )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
         self.layout.addWidget(self.button_box)

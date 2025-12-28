@@ -2,3 +2,5 @@ PySide6
 snapcast
 platformdirs 
 notify-py
+qasync
+ruff

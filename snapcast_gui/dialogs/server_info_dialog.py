@@ -1,19 +1,14 @@
 import logging
-import json
-from typing import TYPE_CHECKING
+
 from PySide6.QtWidgets import (
     QDialog,
     QLabel,
     QVBoxLayout,
 )
 
-if TYPE_CHECKING:
-    from snapcast_gui.windows.main_window import MainWindow
-
-
 class ServerInfoDialog(QDialog):
-    """A class to create a dialog window to display server information.
-    """
+    """A class to create a dialog window to display server information."""
+
     def __init__(self, server_data_json, log_level: int = logging.DEBUG) -> None:
         super().__init__()
         self.logger = logging.getLogger("ServerInfoDialog")
@@ -28,7 +23,7 @@ class ServerInfoDialog(QDialog):
         server_host = self.server_data["server"]["host"]
         snapserver_info = self.server_data["server"]["snapserver"]
         streams = self.server_data["streams"]
-        
+
         self.layout = QVBoxLayout()
 
         self.add_info_label("Server Host Name", server_host["name"])
@@ -39,19 +34,21 @@ class ServerInfoDialog(QDialog):
 
         self.add_info_label("Snapserver Name", snapserver_info["name"])
         self.add_info_label("Snapserver Version", snapserver_info["version"])
-        self.add_info_label("Snapserver Protocol Version",
-                            snapserver_info["protocolVersion"])
-        self.add_info_label("Control Protocol Version",
-                            snapserver_info["controlProtocolVersion"])
+        self.add_info_label(
+            "Snapserver Protocol Version", snapserver_info["protocolVersion"]
+        )
+        self.add_info_label(
+            "Control Protocol Version", snapserver_info["controlProtocolVersion"]
+        )
 
         for stream in streams:
             stream_id = stream["id"]
             stream_status = stream["properties"]["status"]
             stream_uri = stream["uri"]["raw"]
 
-            self.add_info_label(f"Stream ID", stream_id)
-            self.add_info_label(f"Stream Status", stream_status)
-            self.add_info_label(f"Stream URI", stream_uri)
+            self.add_info_label("Stream ID", stream_id)
+            self.add_info_label("Stream Status", stream_status)
+            self.add_info_label("Stream URI", stream_uri)
 
         self.setLayout(self.layout)
 
@@ -66,4 +63,6 @@ class ServerInfoDialog(QDialog):
         label = QLabel(f"{label_text}: {value}")
         label.setToolTip(f"{label_text}")
         self.layout.addWidget(label)
-        self.logger.debug(f"Server Info Dialog: Added label for {label_text} with value {value}")
+        self.logger.debug(
+            f"Server Info Dialog: Added label for {label_text} with value {value}"
+        )

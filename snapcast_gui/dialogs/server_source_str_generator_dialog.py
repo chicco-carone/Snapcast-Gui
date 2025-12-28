@@ -1,7 +1,5 @@
 import logging
-from functools import partial
 from PySide6.QtWidgets import (
-    QApplication,
     QDialog,
     QLabel,
     QLineEdit,
@@ -14,6 +12,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QDesktopServices
 from PySide6.QtCore import QUrl
+
 
 class ServerSourceStrGeneratorDialog(QDialog):
     """
@@ -34,7 +33,20 @@ class ServerSourceStrGeneratorDialog(QDialog):
 
         self.type_label = QLabel("Input Type:")
         self.type_dropdown = QComboBox()
-        self.type_dropdown.addItems(["pipe", "librespot", "airplay", "file", "process", "tcp server", "tcp client", "alsa", "jack", "meta"])
+        self.type_dropdown.addItems(
+            [
+                "pipe",
+                "librespot",
+                "airplay",
+                "file",
+                "process",
+                "tcp server",
+                "tcp client",
+                "alsa",
+                "jack",
+                "meta",
+            ]
+        )
         self.type_dropdown.currentIndexChanged.connect(self.update_input_fields)
         self.layout.addWidget(self.type_label)
         self.input_layout.addWidget(self.type_dropdown)
@@ -83,7 +95,9 @@ class ServerSourceStrGeneratorDialog(QDialog):
             self.add_input_field("Device Name", "Snapcast", "Optional")
             self.add_input_field("Bitrate", "320", "Optional")
         elif input_type == "airplay":
-            self.add_input_field("Path to Shairport-sync", "path/to/shairport-sync", "Required")
+            self.add_input_field(
+                "Path to Shairport-sync", "path/to/shairport-sync", "Required"
+            )
             self.add_input_field("Name", "Airplay Name", "Required")
             self.add_input_field("Device Name", "Snapcast", "Optional")
             self.add_input_field("Port", "5000", "Optional")
@@ -123,7 +137,9 @@ class ServerSourceStrGeneratorDialog(QDialog):
             self.add_input_field("Sources", "source1/source2/...", "Required")
             self.add_input_field("Codec", "null", "Optional")
 
-    def add_input_field(self, label_text: str, placeholder_text: str ="", requirement: str ="Optional") -> None:
+    def add_input_field(
+        self, label_text: str, placeholder_text: str = "", requirement: str = "Optional"
+    ) -> None:
         """
         Add a labeled input field to the layout with tooltip and default text.
 
@@ -140,14 +156,21 @@ class ServerSourceStrGeneratorDialog(QDialog):
         self.input_fields_layout.addWidget(line_edit)
         self.logger.debug(f"Added input field {label_text} ({requirement}).")
 
-
     def generate_input_string(self) -> None:
         """
         Generate the input string from the user inputs.
         """
         input_type = self.type_dropdown.currentText()
-        inputs = [self.input_fields_layout.itemAt(i).widget().text() for i in range(self.input_fields_layout.count()) if i % 2 != 0]
-        labels = [self.input_fields_layout.itemAt(i).widget().text() for i in range(self.input_fields_layout.count()) if i % 2 == 0]
+        inputs = [
+            self.input_fields_layout.itemAt(i).widget().text()
+            for i in range(self.input_fields_layout.count())
+            if i % 2 != 0
+        ]
+        labels = [
+            self.input_fields_layout.itemAt(i).widget().text()
+            for i in range(self.input_fields_layout.count())
+            if i % 2 == 0
+        ]
 
         required_fields = {
             "pipe": ["Path to Pipe", "Name"],
@@ -159,7 +182,7 @@ class ServerSourceStrGeneratorDialog(QDialog):
             "tcp client": ["Server IP", "Name"],
             "alsa": ["Name"],
             "jack": ["Name"],
-            "meta": ["Name", "Sources"]
+            "meta": ["Name", "Sources"],
         }
 
         for label, input_text in zip(labels, inputs):
@@ -233,33 +256,54 @@ class ServerSourceStrGeneratorDialog(QDialog):
                 input_string += f"&codec={inputs[2]}"
 
         self.logger.debug(f"Generated input string: {input_string}")
-        QMessageBox.information(self, "Input String", f"Generated Input String:\n{input_string}")
-        
+        QMessageBox.information(
+            self, "Input String", f"Generated Input String:\n{input_string}"
+        )
+
     def link_to_info_page_on_github(self) -> None:
-        
         dropdown_text = self.type_dropdown.currentText()
         match dropdown_text:
             case "pipe":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#pipe")
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#pipe"
+                )
             case "librespot":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#librespot")
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#librespot"
+                )
             case "airplay":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#airplay")
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#airplay"
+                )
             case "file":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#file")
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#file"
+                )
             case "process":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#process")
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#process"
+                )
             case "tcp server":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#tcp-server")
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#tcp-server"
+                )
             case "tcp client":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#tcp-client")
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#tcp-client"
+                )
             case "alsa":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#alsa")
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#alsa"
+                )
             case "jack":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#jack")
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#jack"
+                )
             case "meta":
-                self.open_url("https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#meta")
-                
+                self.open_url(
+                    "https://github.com/badaix/snapcast/blob/develop/doc/configuration.md#meta"
+                )
+
     def open_url(self, url: str) -> None:
         """
         Open a URL in the default web browser.

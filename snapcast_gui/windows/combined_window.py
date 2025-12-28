@@ -15,14 +15,16 @@ from PySide6.QtWidgets import (
 )
 
 from snapcast_gui.dialogs.path_input_dialog import PathInputDialog
-from snapcast_gui.dialogs.server_source_str_generator_dialog import ServerSourceStrGeneratorDialog
+from snapcast_gui.dialogs.server_source_str_generator_dialog import (
+    ServerSourceStrGeneratorDialog,
+)
 from snapcast_gui.misc.snapcast_gui_variables import SnapcastGuiVariables
 from snapcast_gui.fileactions.snapcast_settings import SnapcastSettings
 
 
 class CombinedWindow(QMainWindow):
-    """A class that handles the union of the main window and client window into a single window.
-    """
+    """A class that handles the union of the main window and client window into a single window."""
+
     def __init__(
         self,
         main_window: QWidget,
@@ -45,7 +47,9 @@ class CombinedWindow(QMainWindow):
         self.snapcast_settings = snapcast_settings
         self.main_window = main_window
 
-        self.setWindowTitle("Snapcast Gui {}".format(SnapcastGuiVariables.snapcast_gui_version))
+        self.setWindowTitle(
+            "Snapcast Gui {}".format(SnapcastGuiVariables.snapcast_gui_version)
+        )
         self.setWindowIcon(QIcon(SnapcastGuiVariables.snapcast_icon_path))
         self.setMinimumSize(250, 150)
 
@@ -63,24 +67,23 @@ class CombinedWindow(QMainWindow):
         self.addToolBar(self.toolbar)
 
         self.settings_action = QAction("Settings", self)
-        self.settings_action.triggered.connect(
-            lambda: self.toggle_settings_window())
+        self.settings_action.triggered.connect(lambda: self.toggle_settings_window())
 
         if sys.platform == "linux" or sys.platform == "darwin":
             self.server_action = QAction("Snapserver", self)
-            self.server_action.triggered.connect(
-                lambda: self.toggle_server_window())
+            self.server_action.triggered.connect(lambda: self.toggle_server_window())
         elif sys.platform == "win32":
             self.server_action = QAction("Snapserver (Unsupported)", self)
             self.server_action.setEnabled(False)
-            self.server_action.setToolTip(
-                "Snapserver is not supported on Windows")
+            self.server_action.setToolTip("Snapserver is not supported on Windows")
 
         self.source_generator_action = QAction("Source Generator", self)
         self.source_generator_action.triggered.connect(
-            lambda: self.show_source_generator_dialog())
+            lambda: self.show_source_generator_dialog()
+        )
         self.source_generator_action.setToolTip(
-            "Generate a Snapserver source configuration")
+            "Generate a Snapserver source configuration"
+        )
 
         self.toolbar.addAction(self.settings_action)
         self.toolbar.addAction(self.server_action)
@@ -117,14 +120,15 @@ class CombinedWindow(QMainWindow):
         source_generator_dialog = ServerSourceStrGeneratorDialog(self, self.log_level)
         source_generator_dialog.exec()
 
-
     def find_program(self, program_name: str) -> str:
         if sys.platform in ["linux", "darwin"]:
             path_dirs = os.environ.get("PATH")
             if path_dirs:
                 for directory in path_dirs.split(os.pathsep):
                     program_path = os.path.join(directory, program_name)
-                    if os.path.exists(program_path) and os.access(program_path, os.X_OK):
+                    if os.path.exists(program_path) and os.access(
+                        program_path, os.X_OK
+                    ):
                         return program_path
 
             dialog = PathInputDialog(program_name, self.log_level)
@@ -133,13 +137,12 @@ class CombinedWindow(QMainWindow):
                 if os.path.exists(program_path) and os.access(program_path, os.X_OK):
                     return program_path
 
-        elif sys.platform == "win32": 
+        elif sys.platform == "win32":
             dialog = PathInputDialog(program_name, self.log_level)
             if dialog.exec() == QDialog.Accepted:
                 program_path = dialog.get_path()
                 if os.path.exists(program_path):
                     return program_path
-
 
         raise Exception(
             f"Unable to find path for program: {program_name} and no valid path provided by user"
@@ -151,13 +154,17 @@ class CombinedWindow(QMainWindow):
         """
         try:
             if sys.platform == "linux":
-                if not self.snapcast_settings.read_setting("snapclient/enable_custom_path"):
+                if not self.snapcast_settings.read_setting(
+                    "snapclient/enable_custom_path"
+                ):
                     snapclient_path = self.find_program("snapclient")
                     self.snapcast_settings.update_setting(
                         "snapclient/custom_path", snapclient_path
                     )
-                
-                if not self.snapcast_settings.read_setting("snapserver/enable_custom_path"):
+
+                if not self.snapcast_settings.read_setting(
+                    "snapserver/enable_custom_path"
+                ):
                     snapserver_path = self.find_program("snapserver")
                     self.snapcast_settings.update_setting(
                         "snapserver/custom_path", snapserver_path
@@ -173,14 +180,18 @@ class CombinedWindow(QMainWindow):
                         )
 
             elif sys.platform == "win32":
-                if not self.snapcast_settings.read_setting("snapclient/enable_custom_path"):
+                if not self.snapcast_settings.read_setting(
+                    "snapclient/enable_custom_path"
+                ):
                     snapclient_path = self.find_program("snapclient.exe")
                     self.snapcast_settings.update_setting(
                         "snapclient/custom_path", snapclient_path
                     )
 
             elif sys.platform == "darwin":
-                if not self.snapcast_settings.read_setting("snapclient/enable_custom_path"):
+                if not self.snapcast_settings.read_setting(
+                    "snapclient/enable_custom_path"
+                ):
                     snapclient_path = self.find_program("snapclient")
                     self.snapcast_settings.update_setting(
                         "snapclient/custom_path", snapclient_path
@@ -212,12 +223,16 @@ class CombinedWindow(QMainWindow):
                     if QMessageBox.Yes:
                         self.logger.debug("Using default theme")
                         theme = self.find_default_theme()
-                        self.snapcast_settings.update_setting("themes/current_theme", theme)
+                        self.snapcast_settings.update_setting(
+                            "themes/current_theme", theme
+                        )
                         self.logger.debug(f"Selected theme: {theme}")
                     else:
                         self.logger.debug("No matching theme found")
                         theme = QApplication.style().objectName()
-                        self.snapcast_settings.update_setting("themes/current_theme", theme)
+                        self.snapcast_settings.update_setting(
+                            "themes/current_theme", theme
+                        )
                         self.logger.debug(f"Default theme: {theme}")
             else:
                 self.logger.debug("No theme selected")
@@ -241,16 +256,16 @@ class CombinedWindow(QMainWindow):
             if available_theme.lower() == theme.lower():
                 self.logger.debug(f"Default theme found: {available_theme}")
                 return available_theme
-        self.logger.debug(f"Default theme not found, using the default application object style: {theme}")
+        self.logger.debug(
+            f"Default theme not found, using the default application object style: {theme}"
+        )
         return theme
-    
+
     def download_snapclient(self) -> None:
-        """Downloads the snapclient executable for supported plaforms (Windows)
-        """
+        """Downloads the snapclient executable for supported plaforms (Windows)"""
         if sys.platform == "win32":
             logging.debug()
-    
+
     def update_snapclient(self) -> None:
-        """Updates the snapclient executable for supported platforms (Windows)
-        """
+        """Updates the snapclient executable for supported platforms (Windows)"""
         raise NotImplementedError("Still need to implement the update functionanlity")

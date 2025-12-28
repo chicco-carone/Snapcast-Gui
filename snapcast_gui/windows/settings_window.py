@@ -37,7 +37,12 @@ class SettingsWindow(QMainWindow):
     Represents the settings window of the Snapcast-Gui application.
     """
 
-    def __init__(self, snapcast_settings: "SnapcastSettings", main_window: "MainWindow", log_level: int):
+    def __init__(
+        self,
+        snapcast_settings: "SnapcastSettings",
+        main_window: "MainWindow",
+        log_level: int,
+    ):
         super().__init__()
         self.logger = logging.getLogger("SettingsWindow")
         self.logger.setLevel(log_level)
@@ -82,7 +87,15 @@ class SettingsWindow(QMainWindow):
 
         self.sidebar_options = QListWidget()
         self.sidebar_options.addItems(
-            ["Themes", "Snapclient", "Snapserver", "Shortcuts", "Logs", "About", "Behavior"]
+            [
+                "Themes",
+                "Snapclient",
+                "Snapserver",
+                "Shortcuts",
+                "Logs",
+                "About",
+                "Behavior",
+            ]
         )
         self.sidebar_options.currentRowChanged.connect(self.show_settings)
         self.sidebar_options.setObjectName("sidebar_options")
@@ -269,13 +282,16 @@ class SettingsWindow(QMainWindow):
         self.advanced_snapclient_settings_label = QLabel(
             "Advanced Settings (Proceed With Caution)"
         )
-        self.advanced_snapclient_settings_label.setObjectName("advanced_snapclient_settings_label")
+        self.advanced_snapclient_settings_label.setObjectName(
+            "advanced_snapclient_settings_label"
+        )
         self.settings_layout.addWidget(self.advanced_snapclient_settings_label)
 
         self.custom_snapclient_path_checkbox = QCheckBox("Enable Custom Path")
         self.custom_snapclient_path_checkbox.stateChanged.connect(
             lambda: self.snapcast_settings.update_setting(
-                "snapclient/Enable_Custom_Path", self.custom_snapclient_path_checkbox.isChecked()
+                "snapclient/Enable_Custom_Path",
+                self.custom_snapclient_path_checkbox.isChecked(),
             )
         )
         self.custom_snapclient_path_checkbox.stateChanged.connect(
@@ -283,7 +299,9 @@ class SettingsWindow(QMainWindow):
                 self.custom_snapclient_path_checkbox.isChecked()
             )
         )
-        self.custom_snapclient_path_checkbox.setObjectName("custom_snapclient_path_checkbox")
+        self.custom_snapclient_path_checkbox.setObjectName(
+            "custom_snapclient_path_checkbox"
+        )
         self.settings_layout.addWidget(self.custom_snapclient_path_checkbox)
 
         self.custom_snapclient_path_text = QTextEdit()
@@ -299,21 +317,22 @@ class SettingsWindow(QMainWindow):
             "Custom Path (eg: /usr/bin/snapclient)"
         )
         self.custom_snapclient_path_text.setObjectName("custom_snapclient_path_text")
-        self.settings_layout.addWidget(self.custom_snapclient_path_text, alignment=Qt.AlignTop)
+        self.settings_layout.addWidget(
+            self.custom_snapclient_path_text, alignment=Qt.AlignTop
+        )
         if self.snapcast_settings.read_setting("snapclient/enable_custom_path"):
             self.custom_snapclient_path_text.setEnabled(True)
         else:
             self.custom_snapclient_path_text.setEnabled(False)
-            
+
         snapclient_version_text = QLabel()
         snapclient_version = SnapcastGuiVariables.snapclient_version
         if snapclient_version != "":
             snapclient_version_text.setText("Snapclient version " + snapclient_version)
         else:
             snapclient_version_text.setText("Can't pull snapclient version")
-        
+
         self.settings_layout.addWidget(snapclient_version_text)
-        
 
     def setup_snapclient_autostart_settings(self, autostart_snapclient: bool):
         """
@@ -324,22 +343,34 @@ class SettingsWindow(QMainWindow):
         """
 
         if not autostart_snapclient:
-            if hasattr(self, "autoconnect_settings") and self.autoconnect_settings is not None:
+            if (
+                hasattr(self, "autoconnect_settings")
+                and self.autoconnect_settings is not None
+            ):
                 self.settings_layout.removeWidget(self.autoconnect_settings)
                 self.autoconnect_settings.deleteLater()
                 self.autoconnect_settings: Optional[QLabel] = None
 
-            if hasattr(self, "default_ip_dropdown") and self.default_ip_dropdown is not None:
+            if (
+                hasattr(self, "default_ip_dropdown")
+                and self.default_ip_dropdown is not None
+            ):
                 self.settings_layout.removeWidget(self.default_ip_dropdown)
                 self.default_ip_dropdown.deleteLater()
                 self.default_ip_dropdown: Optional[QComboBox] = None
 
-            if hasattr(self, "default_audio_engine_dropdown") and self.default_audio_engine_dropdown is not None:
+            if (
+                hasattr(self, "default_audio_engine_dropdown")
+                and self.default_audio_engine_dropdown is not None
+            ):
                 self.settings_layout.removeWidget(self.default_audio_engine_dropdown)
                 self.default_audio_engine_dropdown.deleteLater()
                 self.default_audio_engine_dropdown: Optional[QComboBox] = None
 
-            if hasattr(self, "command_after_launch") and self.command_after_launch is not None:
+            if (
+                hasattr(self, "command_after_launch")
+                and self.command_after_launch is not None
+            ):
                 self.settings_layout.removeWidget(self.command_after_launch)
                 self.command_after_launch.deleteLater()
                 self.command_after_launch: Optional[QTextEdit] = None
@@ -383,8 +414,12 @@ class SettingsWindow(QMainWindow):
         autostart_snapserver.setObjectName("autostart_snapserver")
         self.settings_layout.addWidget(autostart_snapserver)
 
-        advanced_snapserver_settings_label = QLabel("Advanced Settings (Proceed With Caution)")
-        advanced_snapserver_settings_label.setObjectName("advanced_snapserver_settings_label")
+        advanced_snapserver_settings_label = QLabel(
+            "Advanced Settings (Proceed With Caution)"
+        )
+        advanced_snapserver_settings_label.setObjectName(
+            "advanced_snapserver_settings_label"
+        )
         self.settings_layout.addWidget(advanced_snapserver_settings_label)
 
         custom_snapserver_path_checkbox = QCheckBox("Enable Custom Path")
@@ -404,12 +439,14 @@ class SettingsWindow(QMainWindow):
             "Custom Path (eg: /usr/bin/snapclient)"
         )
         custom_snapserver_path_text.setObjectName("custom_path_text")
-        self.settings_layout.addWidget(custom_snapserver_path_text, alignment=Qt.AlignTop)
+        self.settings_layout.addWidget(
+            custom_snapserver_path_text, alignment=Qt.AlignTop
+        )
         if self.snapcast_settings.read_setting("snapserver/enable_custom_path"):
             custom_snapserver_path_text.setEnabled(True)
         else:
             custom_snapserver_path_text.setEnabled(False)
-            
+
         snapserver_version_text = QLabel()
         snapserver_version = SnapcastGuiVariables.snapserver_version
         if snapserver_version != "":
@@ -456,7 +493,9 @@ class SettingsWindow(QMainWindow):
         self.settings_layout.addWidget(save_shortcuts_button)
 
         apply_shortcuts_button = QPushButton("Apply Shortcuts")
-        apply_shortcuts_button.clicked.connect(self.main_window.tray_icon.load_shortcuts)
+        apply_shortcuts_button.clicked.connect(
+            self.main_window.tray_icon.load_shortcuts
+        )
 
     def create_shortcut(self, action_name, shortcut_config_name):
         """
@@ -535,12 +574,14 @@ class SettingsWindow(QMainWindow):
         self.horizontal_log_layout.setObjectName("horizontal_log_layout")
 
         open_file_button = QPushButton("Open Log File")
-        open_file_button.clicked.connect(lambda: self.open_file(SnapcastGuiVariables.log_file_path))
         open_file_button.clicked.connect(
-            lambda: self.logger.debug("Log file opened.")
+            lambda: self.open_file(SnapcastGuiVariables.log_file_path)
         )
+        open_file_button.clicked.connect(lambda: self.logger.debug("Log file opened."))
         open_file_button.setToolTip(
-            "Opens the log file in the default text editor. {}".format(SnapcastGuiVariables.log_file_path)
+            "Opens the log file in the default text editor. {}".format(
+                SnapcastGuiVariables.log_file_path
+            )
         )
         open_file_button.setObjectName("open_file_button")
         self.horizontal_log_layout.addWidget(open_file_button)
@@ -558,7 +599,9 @@ class SettingsWindow(QMainWindow):
         )
         try:
             with open(SnapcastGuiVariables.log_level_file_path, "r") as log_level_file:
-                self.change_log_level_dropdown.setCurrentText(log_level_file.read().strip())
+                self.change_log_level_dropdown.setCurrentText(
+                    log_level_file.read().strip()
+                )
         except IsADirectoryError:
             os.removedirs(os.path.dirname(SnapcastGuiVariables.log_level_file_path))
             self.logger.error(
@@ -576,7 +619,9 @@ class SettingsWindow(QMainWindow):
         self.autoscroll_button = QPushButton()
         self.autoscroll_button.setText("Refresh Log")
         self.autoscroll_button.setObjectName("refresh_log_button")
-        self.autoscroll_button.setToolTip("Refresh the log reading it from the file again")
+        self.autoscroll_button.setToolTip(
+            "Refresh the log reading it from the file again"
+        )
         self.autoscroll_button.clicked.connect(self.update_log)
         self.horizontal_log_layout.addWidget(self.autoscroll_button)
 
@@ -653,32 +698,45 @@ class SettingsWindow(QMainWindow):
         snapcast_gui_version_label.setObjectName("snapcast_gui_version_label")
         self.settings_layout.addWidget(snapcast_gui_version_label)
 
-        snapclient_version_label = QLabel(f"Snapclient Version: {SnapcastGuiVariables.snapclient_version}")
+        snapclient_version_label = QLabel(
+            f"Snapclient Version: {SnapcastGuiVariables.snapclient_version}"
+        )
         snapclient_version_label.setObjectName("snapclient_version_label")
         self.settings_layout.addWidget(snapclient_version_label)
 
         if sys.platform == "windows":
-            snapserver_version_label = QLabel("Snapserver Version: Unsupported on windows")
+            snapserver_version_label = QLabel(
+                "Snapserver Version: Unsupported on windows"
+            )
             snapserver_version_label.setObjectName("snapserver_version_label")
-            snapserver_version_label.setToolTip("Snapserver version is only available on Linux")
+            snapserver_version_label.setToolTip(
+                "Snapserver version is only available on Linux"
+            )
         else:
-            snapserver_version_label = QLabel(f"Snapserver Version: {SnapcastGuiVariables.snapserver_version}")
+            snapserver_version_label = QLabel(
+                f"Snapserver Version: {SnapcastGuiVariables.snapserver_version}"
+            )
             snapserver_version_label.setObjectName("snapserver_version_label")
 
         self.settings_layout.addWidget(snapserver_version_label)
 
         self.check_latest_version_button = QPushButton("Check Latest Version")
-        self.check_latest_version_button.setToolTip("Check the latest version of Snapcast-Gui on Github")
+        self.check_latest_version_button.setToolTip(
+            "Check the latest version of Snapcast-Gui on Github"
+        )
         self.check_latest_version_button.setIcon(QIcon.fromTheme("system-search"))
         self.check_latest_version_button.clicked.connect(self.check_latest_version)
         self.check_latest_version_button.setObjectName("check_latest_version_button")
         self.settings_layout.addWidget(self.check_latest_version_button)
 
-
         github_button = QPushButton()
         github_button.setIcon(QIcon(SnapcastGuiVariables.github_icon_path))
         github_button.setFixedSize(40, 40)
-        github_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/chicco-carone/Snapcast-Gui")))
+        github_button.clicked.connect(
+            lambda: QDesktopServices.openUrl(
+                QUrl("https://github.com/chicco-carone/Snapcast-Gui")
+            )
+        )
         github_button.setToolTip("Open Snapcast-Gui Github page")
         github_button.setObjectName("github_button")
         # self.settings_layout.addWidget(github_button)
@@ -700,12 +758,15 @@ class SettingsWindow(QMainWindow):
         self.enable_notifications_checkbox.setChecked(
             self.snapcast_settings.read_setting("behavior/enable_notifications")
         )
-        self.enable_notifications_checkbox.setObjectName("enable_notifications_checkbox")
+        self.enable_notifications_checkbox.setObjectName(
+            "enable_notifications_checkbox"
+        )
         self.settings_layout.addWidget(self.enable_notifications_checkbox)
 
         self.enable_notifications_checkbox.stateChanged.connect(
             lambda: self.snapcast_settings.update_setting(
-                "behavior/enable_notifications", self.enable_notifications_checkbox.isChecked()
+                "behavior/enable_notifications",
+                self.enable_notifications_checkbox.isChecked(),
             )
         )
 
@@ -713,7 +774,9 @@ class SettingsWindow(QMainWindow):
         """
         Checks the latest version of Snapcast-Gui on Github.
         """
-        latest_version = SnapcastGuiVariables.get_latest_version(SnapcastGuiVariables.snapcast_gui_github_url)
+        latest_version = SnapcastGuiVariables.get_latest_version(
+            SnapcastGuiVariables.snapcast_gui_github_url
+        )
         if latest_version:
             if latest_version != SnapcastGuiVariables.snapcast_gui_version:
                 QMessageBox.information(

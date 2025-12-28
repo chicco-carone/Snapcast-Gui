@@ -67,7 +67,9 @@ class ClientWindow(QMainWindow):
             self.audio_engine_label = QLabel("Audio Engine", self)
             self.audio_engine_dropdown = QComboBox(self)
             self.audio_engine_dropdown.addItems(["Alsa", "PulseAudio"])
-            self.audio_engine_dropdown.currentIndexChanged.connect(self.update_audio_engine)
+            self.audio_engine_dropdown.currentIndexChanged.connect(
+                self.update_audio_engine
+            )
             self.audio_engine_dropdown.setToolTip("Select the audio engine to use")
             layout.addWidget(self.audio_engine_label)
             layout.addWidget(self.audio_engine_dropdown)
@@ -110,7 +112,9 @@ class ClientWindow(QMainWindow):
         self.port_label = QLabel("Port:", self)
         self.port_input = QLineEdit(self)
         self.port_input.setText("1705")
-        self.port_input.setToolTip("Enter the server port (default: 1780 for ws/wss, 1705 for tcp)")
+        self.port_input.setToolTip(
+            "Enter the server port (default: 1780 for ws/wss, 1705 for tcp)"
+        )
         self.port_input.setMinimumWidth(80)
         self.port_input.setMaximumWidth(100)
 
@@ -217,7 +221,9 @@ class ClientWindow(QMainWindow):
         if not saved_protocol:
             try:
                 client_version = SnapcastGuiVariables.snapclient_version
-                if client_version and version.parse(client_version) >= version.parse("0.34.0"):
+                if client_version and version.parse(client_version) >= version.parse(
+                    "0.34.0"
+                ):
                     # New version: use WebSocket protocol with port 1780
                     index = self.protocol_dropdown.findText("ws")
                     if index >= 0:
@@ -374,7 +380,9 @@ class ClientWindow(QMainWindow):
         # Update port default based on protocol and version
         try:
             client_version = SnapcastGuiVariables.snapclient_version
-            if client_version and version.parse(client_version) >= version.parse("0.34.0"):
+            if client_version and version.parse(client_version) >= version.parse(
+                "0.34.0"
+            ):
                 if selected_protocol in ["ws", "wss"]:
                     self.port_input.setText("1780")
                 else:
@@ -406,7 +414,9 @@ class ClientWindow(QMainWindow):
         try:
             port_int = int(port)
             if port_int < 1 or port_int > 65535:
-                QMessageBox.warning(self, "Invalid Port", "Port must be between 1 and 65535.")
+                QMessageBox.warning(
+                    self, "Invalid Port", "Port must be between 1 and 65535."
+                )
                 return None
         except ValueError:
             QMessageBox.warning(self, "Invalid Port", "Port must be a valid number.")
@@ -416,20 +426,28 @@ class ClientWindow(QMainWindow):
         if self.ip_input.text() != "":
             try:
                 client_version = SnapcastGuiVariables.snapclient_version
-                if client_version and version.parse(client_version) >= version.parse("0.34.0"):
+                if client_version and version.parse(client_version) >= version.parse(
+                    "0.34.0"
+                ):
                     # Use URI format for snapclient 0.34.0+: protocol://ip:port
                     server_uri = f"{protocol}://{self.ip_input.text()}:{port}"
                     arguments.append(server_uri)
-                    self.logger.debug(f"Using URI format for snapclient {client_version}: {server_uri}")
+                    self.logger.debug(
+                        f"Using URI format for snapclient {client_version}: {server_uri}"
+                    )
                 else:
                     # Use legacy format for older versions
                     arguments.extend(["-h", self.ip_input.text()])
                     if port != "1705":  # Only add port if not default
                         arguments.extend(["-p", port])
-                    self.logger.debug(f"Using legacy format for snapclient {client_version}: -h {self.ip_input.text()} -p {port}")
+                    self.logger.debug(
+                        f"Using legacy format for snapclient {client_version}: -h {self.ip_input.text()} -p {port}"
+                    )
             except Exception as e:
                 # Fall back to legacy format if version parsing fails
-                self.logger.warning(f"Failed to parse snapclient version '{client_version}', using legacy format: {e}")
+                self.logger.warning(
+                    f"Failed to parse snapclient version '{client_version}', using legacy format: {e}"
+                )
                 arguments.extend(["-h", self.ip_input.text()])
 
         # Save current settings
@@ -444,16 +462,22 @@ class ClientWindow(QMainWindow):
         if self.audio_engine == "pulse":
             try:
                 client_version = SnapcastGuiVariables.snapclient_version
-                if client_version and version.parse(client_version) >= version.parse("0.34.0"):
+                if client_version and version.parse(client_version) >= version.parse(
+                    "0.34.0"
+                ):
                     # --pcm argument not supported in 0.34.0+, skip it
-                    self.logger.debug(f"--pcm argument not supported in snapclient {client_version}, skipping")
+                    self.logger.debug(
+                        f"--pcm argument not supported in snapclient {client_version}, skipping"
+                    )
                 else:
                     # Use --pcm for older versions
                     arguments.extend(["--pcm", self.pcms_dropdown.currentText()])
                     self.logger.debug(f"Using --pcm for snapclient {client_version}")
             except Exception as e:
                 # Fall back to not using --pcm if version parsing fails
-                self.logger.warning(f"Failed to parse snapclient version '{client_version}', skipping --pcm: {e}")
+                self.logger.warning(
+                    f"Failed to parse snapclient version '{client_version}', skipping --pcm: {e}"
+                )
 
         if (
             self.frequency_dropdown.currentText() != "Default"
@@ -516,9 +540,7 @@ class ClientWindow(QMainWindow):
                     self.snapcast_settings.read_setting("snapclient/custom_path")
                 )
             )
-            self.logger.debug(
-                "Snapclient command: {}".format(" ".join(arguments))
-            )
+            self.logger.debug("Snapclient command: {}".format(" ".join(arguments)))
             self.snapclient_process.started.connect(
                 lambda: self.logger.info("Snapclient process started.")
             )
@@ -532,7 +554,9 @@ class ClientWindow(QMainWindow):
         self.connect_button.clicked.disconnect()
         self.connect_button.clicked.connect(self.stop_snapclient)
         self.disable_controls()
-        Notifications.send_notify("Snapclient started", "Snapclient", self.snapcast_settings)
+        Notifications.send_notify(
+            "Snapclient started", "Snapclient", self.snapcast_settings
+        )
 
     def stop_snapclient(self) -> None:
         """
@@ -548,7 +572,9 @@ class ClientWindow(QMainWindow):
             and self.snapclient_process.state() == QProcess.Running
         ):
             termination_message = "Terminating existing snapclient process..."
-            highlighted_message = LogHighlighter.highlight_text(termination_message + "\n")
+            highlighted_message = LogHighlighter.highlight_text(
+                termination_message + "\n"
+            )
             self.log_area.insertHtml(highlighted_message)
             self.logger.info(termination_message)
 

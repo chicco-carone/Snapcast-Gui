@@ -28,16 +28,20 @@ class SnapcastGuiVariables(QObject):
     """
 
     snapcast_github_url = QUrl(
-        "https://api.github.com/repos/badaix/snapcast/releases/latest")
+        "https://api.github.com/repos/badaix/snapcast/releases/latest"
+    )
     snapcast_gui_github_url = QUrl(
-        "https://api.github.com/repos/chicco-carone/Snapcast-Gui/releases/latest")
+        "https://api.github.com/repos/chicco-carone/Snapcast-Gui/releases/latest"
+    )
     snapcast_gui_version = "0.1.1"
 
     snapclient_version = ""
     snapserver_version = ""
 
-    config_dir: str = str(Path(QStandardPaths.writableLocation(
-        QStandardPaths.AppConfigLocation)) / "snapcast-gui")
+    config_dir: str = str(
+        Path(QStandardPaths.writableLocation(QStandardPaths.AppConfigLocation))
+        / "snapcast-gui"
+    )
     log_file_path: str = str(Path(config_dir) / "snapcast-gui.log")
     settings_file_path: str = str(Path(config_dir) / "settings.ini")
     config_file_path: str = str(Path(config_dir) / "config.ini")
@@ -73,14 +77,14 @@ class SnapcastGuiVariables(QObject):
             process.setProgram(program_path)
             process.setArguments(["--version"])
             process.start()
-            
+
             if process.waitForFinished(5000):
                 output = process.readAllStandardOutput().data().decode()
                 error_output = process.readAllStandardError().data().decode()
 
                 full_output = output + error_output
-                
-                lines = full_output.strip().split('\n')
+
+                lines = full_output.strip().split("\n")
                 if lines:
                     first_line = lines[0].strip()
                     parts = first_line.split()
@@ -88,10 +92,12 @@ class SnapcastGuiVariables(QObject):
                         version = parts[1]
                         logger.debug(f"Detected {program_path} version: {version}")
                         return version
-            
-            logger.warning(f"Failed to get version for {program_path}. Process exit code: {process.exitCode()}")
+
+            logger.warning(
+                f"Failed to get version for {program_path}. Process exit code: {process.exitCode()}"
+            )
             return ""
-            
+
         except Exception as e:
             logger = logging.getLogger("SnapcastGuiVariables")
             logger.error(f"Error getting version for {program_path}: {e}")
@@ -105,13 +111,17 @@ class SnapcastGuiVariables(QObject):
         """
         logger = logging.getLogger("SnapcastGuiVariables")
         logger.info("Initializing program versions...")
-        
+
         default_snapclient_path = "snapclient"
         default_snapserver_path = "snapserver"
-        
-        SnapcastGuiVariables.snapclient_version = SnapcastGuiVariables.get_program_version(default_snapclient_path)
-        SnapcastGuiVariables.snapserver_version = SnapcastGuiVariables.get_program_version(default_snapserver_path)
-        
+
+        SnapcastGuiVariables.snapclient_version = (
+            SnapcastGuiVariables.get_program_version(default_snapclient_path)
+        )
+        SnapcastGuiVariables.snapserver_version = (
+            SnapcastGuiVariables.get_program_version(default_snapserver_path)
+        )
+
         logger.info(f"Snapclient version: {SnapcastGuiVariables.snapclient_version}")
         logger.info(f"Snapserver version: {SnapcastGuiVariables.snapserver_version}")
 
@@ -125,14 +135,16 @@ class SnapcastGuiVariables(QObject):
         if os.path.exists(snapcast_icon_system):
             SnapcastGuiVariables.snapcast_icon_path = snapcast_icon_system
         else:
-            SnapcastGuiVariables.snapcast_icon_path = SnapcastGuiVariables.resource_path(
-                "icons/Snapcast.png")
+            SnapcastGuiVariables.snapcast_icon_path = (
+                SnapcastGuiVariables.resource_path("icons/Snapcast.png")
+            )
 
         if os.path.exists(github_icon_system):
             SnapcastGuiVariables.github_icon_path = github_icon_system
         else:
             SnapcastGuiVariables.github_icon_path = SnapcastGuiVariables.resource_path(
-                "icons/Github.png")
+                "icons/Github.png"
+            )
 
     @staticmethod
     def get_latest_version(git_url: QUrl):
