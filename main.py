@@ -4,7 +4,7 @@ import os
 import signal
 import sys
 
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication, QDialog
 from qasync import QEventLoop
@@ -204,6 +204,12 @@ def main():
 
     # Register signal handler for SIGINT
     signal.signal(signal.SIGINT, signal_handler)
+
+    # Create a timer to allow Python to process signals
+    # Qt event loop blocks signal handlers, so we need periodic interrupts
+    timer = QTimer()
+    timer.timeout.connect(lambda: None)  # Empty slot to allow signal processing
+    timer.start(100)  # Process signals every 100ms
 
     combined_window.show()
     
